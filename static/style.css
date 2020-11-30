@@ -1,0 +1,10 @@
+html { font-family: sans-serif; background: #eee; }
+body { max-width: 960px; margin: 0 auto; background: white; }
+h2 { text-align: center; }
+hr { border: none; border-top: 10px solid lightgray; }
+nav { background: lightgray; display: flex; align-items: center; padding: 0 0.5rem; }
+nav ul  { display: flex; list-style: none; margin: 0; padding: 0; }
+nav ul li a { display: block; padding: 0.5rem; }
+.video, .picture { max-width: 100%; height: auto; display: block; margin: 0 auto;}
+.about-div { margin: 0 5px; }
+.coffee { margin-left: auto; }

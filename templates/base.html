@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+{% if request.MOBILE is not none %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_mobile.css') }}">
+{% else %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endif %}
+    <head>
+      {% if title %}
+          <title>{{ title }}</title>
+      {% else %}
+          <title>Top Cat</title>
+      {% endif %}
+      <meta property="og:title" content="Top Cat">
+      <meta property="og:description" content="Cute cat and dog pictures to brighten your day.">
+      <meta property="og:image" content="https://topcat.app/static/topcat_index.jpg">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
+    </head>
+    <body>
+      <nav id="navbar">
+        <div class="nav-items">
+          <ul>
+              <li><a href="/index">About</a></li>
+              <li><a href="/top/cat">Top Cat</a></li>
+              <li><a href="/top/dog">Top Dog</a></li>
+          </ul>
+        </div>
+        <div class="coffee">
+          <a href="https://www.buymeacoffee.com/simnim" title="Buy me a coffee" class="coffee"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy me a coffee"></a>
+        </div>
+      </nav>
+        {% block content %}{% endblock %}
+    </body>
+</html>

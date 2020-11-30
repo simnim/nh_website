@@ -1,0 +1,11 @@
+html { font-family: sans-serif; background: #eee; font-size: 12px;}
+body { max-width: 100%; margin: 0 16px; background: white; }
+h2 { text-align: center; font-size: 16px;}
+hr { border: none; border-top: 10px solid lightgray; }
+nav { background: lightgray; display: flex; align-items: center; padding: 0 10px; }
+nav ul  { display: flex; list-style: none; margin: 0; padding: 0; }
+nav ul li a { display: block; padding: 10px; font-size: 30px;}
+p { text-indent: 40px; padding: 0 0 8px 0; }
+.video, .picture { max-width: 100%; height: auto; display: block; margin: 0 auto;}
+.about-div { margin: 0 5px; font-size: 20px; }
+.coffee { margin-left: auto; }

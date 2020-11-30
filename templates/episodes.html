@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+         <table>
+            <tr> <td> Show Name </td> <td> {{ show_meta.primaryTitle }} </td> </tr>
+            <tr> <td> Start Year </td> <td> {{ show_meta.startYear }} </td> </tr>
+            <tr> <td> Typical Runtime </td> <td> {{ show_meta.runtimeMinutes }} min</td> </tr>
+            <tr> <td> Genre tags </td> <td> {{ show_meta.genres }} </td> </tr>
+         </table>
+        <hr>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <td> Season </td>
+                <td> Episode </td>
+                <td> Title </td>
+                <td> Average Rating </td>
+                <td> Num Votes </td>
+                <td> Ratings Percentile </td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for episode in episodes %}
+                <tr>
+                    <td> {{ episode.seasonNumber }} </td>
+                    <td> {{ episode.episodeNumber }} </td>
+                    <td> {{ episode.primaryTitle }} </td>
+                    <td> {{ episode.averageRating }} </td>
+                    <td> {{ episode.numVotes }} </td>
+                    <td> {{ (100-episode.percent_rank)|round()|int }} </td>
+                </tr>
+            {% endfor %}
+    </tbody>
+    </table>
+{% endblock %}

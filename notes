@@ -60,6 +60,8 @@ where ratings.tconst = percent_ranks.tconst;
 
 
 
+```
+-- Query after adding the percent ranks to the ratings table.
 
 select
     e.seasonNumber,
@@ -72,10 +74,10 @@ from episode e
 join ratings r using (tconst)
 join basics b using (tconst)
 where e.parentTconst = 'tt0112178'
-and r.percent_rank < .2
+and r.percent_rank < 20
 order by e.seasonNumber,
          e.episodeNumber
 ;
-
+```
 
 
