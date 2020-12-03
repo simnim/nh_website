@@ -9,3 +9,27 @@ p { text-indent: 40px; padding: 0 0 8px 0; }
 .video, .picture { max-width: 100%; height: auto; display: block; margin: 0 auto;}
 .about-div { margin: 0 5px; font-size: 20px; }
 .coffee { margin-left: auto; }
+
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 26px;
+}
+
+table td, table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table tr:nth-child(even){background-color: #f2f2f2;}
+
+table tr:hover {background-color: #ddd;}
+
+table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #4CAF50;
+  color: white;
+}

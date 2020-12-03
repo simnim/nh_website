@@ -8,3 +8,27 @@ nav ul li a { display: block; padding: 0.5rem; }
 .video, .picture { max-width: 100%; height: auto; display: block; margin: 0 auto;}
 .about-div { margin: 0 5px; }
 .coffee { margin-left: auto; }
+
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: center;
+}
+
+table td, table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table tr:nth-child(even){background-color: #f2f2f2;}
+
+table tr:hover {background-color: #ddd;}
+
+table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}

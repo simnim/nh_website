@@ -1,4 +1,6 @@
 #!/bin/bash
+set -Eeuxo pipefail
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Hop into a temp directory

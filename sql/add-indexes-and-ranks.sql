@@ -1,4 +1,24 @@
 -- name: add_indexes_and_ranks#
+-- clean up types from csv-to-sql then add indexes and the percent_ranks column to ratings.
+
+-- fix types for episode table
+ALTER TABLE episode RENAME TO tmp;
+CREATE TABLE [episode] (
+    [tconst] text,
+    [parentTconst] text,
+    [seasonNumber] int,
+    [episodeNumber] int
+);
+insert into episode
+select
+    tconst,
+    [parentTconst],
+    nullif([seasonNumber],'\N'),
+    nullif([episodeNumber],'\N')
+from tmp;
+drop table tmp;
+
+
 CREATE INDEX IF NOT EXISTS
 episode_tconst_idx
 on episode (
@@ -22,6 +42,7 @@ ratings_tconst_idx
 on ratings (
         tconst
     );
+
 
 
 alter table ratings add column percent_rank float;
