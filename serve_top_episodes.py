@@ -1,4 +1,3 @@
-import mimetypes
 import os
 import sqlite3
 
