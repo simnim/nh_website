@@ -79,5 +79,3 @@ order by e.seasonNumber,
          e.episodeNumber
 ;
 ```
-
-

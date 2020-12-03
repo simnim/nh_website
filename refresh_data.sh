@@ -25,4 +25,3 @@ popd
 
 # Add the indexes and show ranks
 cat ${SCRIPT_DIR}/sql/add-indexes-and-ranks.sql | sqlite3 ~/imdb.db
-

@@ -27,17 +27,18 @@ Mobility(app)
 @app.route("/")
 @app.route("/index")
 @app.route("/episodes")
-def powerful_episodes():
-    # For now just query for tt0112178 = star trek voyager and percent to keep of 20
-    imdb_show_id = 'tt0112178'
-    show_meta = QUERIES.get_basic_show_info(conn, imdb_show_id=imdb_show_id)
-    episodes = QUERIES.get_top_episodes_for_show(conn, imdb_show_id=imdb_show_id, max_rank_pct=20)
-    return render_template("episodes.html", show_meta=show_meta, episodes=episodes)
-
 @app.route("/episodes/<string:imdb_show_id>/<int:max_rank_pct>")
-def only_powerful_episodes(imdb_show_id, max_rank_pct=20):
+def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
     # For now just query for tt0112178 = star trek voyager and percent to keep of 20
-    print('got here')
+    print("got here")
     show_meta = QUERIES.get_basic_show_info(conn, imdb_show_id=imdb_show_id)
-    episodes = QUERIES.get_top_episodes_for_show(conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct)
-    return render_template("episodes.html", show_meta=show_meta, episodes=episodes)
+    episodes = QUERIES.get_top_episodes_for_show(
+        conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct
+    )
+    return render_template(
+        "episodes.html",
+        imdb_show_id=imdb_show_id,
+        max_rank_pct=max_rank_pct,
+        show_meta=show_meta,
+        episodes=episodes,
+    )

@@ -61,4 +61,3 @@ update ratings
 set percent_rank = percent_ranks.pct_rnk * 100
 from percent_ranks
 where ratings.tconst = percent_ranks.tconst;
-
