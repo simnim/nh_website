@@ -9,13 +9,6 @@ from wtforms import IntegerField, StringField, SubmitField
 
 # from wtforms.validators import DataRequired
 
-
-class IMDbForm(FlaskForm):
-    imdb_show_id = StringField("IMDb Show ID")
-    max_rank_pct = IntegerField("Max Rank Percent")
-    submit = SubmitField("Show the best episodes")
-
-
 if hasattr(__builtins__, "__IPYTHON__"):
     THIS_SCRIPT_DIR = os.getcwd()
 else:
@@ -35,6 +28,12 @@ app.config["SECRET_KEY"] = "derps"
 Mobility(app)
 
 
+class IMDbForm(FlaskForm):
+    imdb_show_id = StringField("IMDb Show ID")
+    max_rank_pct = IntegerField("Max Rank Percent")
+    submit = SubmitField("Show the best episodes")
+
+
 @app.route("/", methods=["GET", "POST"])
 @app.route("/index", methods=["GET", "POST"])
 @app.route("/episodes", methods=["GET", "POST"])
@@ -45,7 +44,6 @@ Mobility(app)
 def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
     # For now just query for tt0112178 = star trek voyager and percent to keep of 20
     form = IMDbForm()
-    print("derp")
     if request.method == "POST":
         if form.imdb_show_id.data:
             return redirect(
@@ -57,7 +55,6 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             )
         else:
             return redirect(url_for("only_powerful_episodes"))
-    print("derps")
     show_meta = QUERIES.get_basic_show_info(conn, imdb_show_id=imdb_show_id)
     episodes = QUERIES.get_top_episodes_for_show(
         conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct
