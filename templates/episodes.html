@@ -1,18 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.imdb_show_id.label }}
+            {{ form.imdb_show_id(size=32, value=(imdb_show_id or '')) }}
+            {% for error in form.imdb_show_id.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+            <br>
+            {{ form.max_rank_pct.label }}
+            {{ form.max_rank_pct(size=32, value=(max_rank_pct or '')) }}
+            {% for error in form.max_rank_pct.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</
+    </form>
+    <hr>
+    {% if imdb_show_id is not none %}
+
     <div>
         <table>
             <tr> <td> Show Name </td> <td> {{ show_meta.primaryTitle }} </td> </tr>
             <tr> <td> Start Year </td> <td> {{ show_meta.startYear }} </td> </tr>
             <tr> <td> Typical Runtime </td> <td> {{ show_meta.runtimeMinutes }} min</td> </tr>
             <tr> <td> Genre tags </td> <td> {{ show_meta.genres }} </td> </tr>
+            <tr> <td> IMDb Show ID </td> <td> {{ imdb_show_id }} </td> </tr>
+            <tr> <td> Showing</td> <td> The best {{ max_rank_pct }}% of episodes => {{ episodes|length }} total</td> </tr>
         </table>
         <hr>
     </div>
     <table>
         <thead>
             <tr>
+                <th> Index<sub><sub>1</sub></sub> </th>
                 <th> Season </th>
                 <th> Episode </th>
                 <th> Title </th>
@@ -24,6 +47,7 @@
         <tbody>
             {% for episode in episodes %}
                 <tr>
+                    <td> {{ loop.index }}</td>
                     <td> {{ episode.seasonNumber }} </td>
                     <td> {{ episode.episodeNumber }} </td>
                     <td> {{ episode.primaryTitle }} </td>
@@ -34,4 +58,24 @@
             {% endfor %}
     </tbody>
     </table>
+
+    {% else %}
+
+    Hello and welcome to Top Episodes.
+    <p>
+    This page applies the power law to TV so you can get 4 times more utility for your time. ( 80%/(1-80%) = 4 )
+    <p>
+    Essentially you are filtering out the bottom 80% of the episodes of a show and only keeping the top 20% of the content.
+    <p>
+    Some shows are not serial at all (no connection/memory from show N to N+1) and for those you might want to start out with an a very strict 5% filter and expand to 20% only if you felt like you enjoyed the 5%. Some cult classics might only have a few good ones (at least in your opinion) so 1% might be all that's worth watching to start!!!
+    <p>
+    Every show is different. Some shows require you to watch every episode to understand the story. For those you might want to filter out only a handful of episodes or none at all (keep 80% to 100%).
+    <p>
+    For a list of sci-fi favorites recommended by the #1 biggest sci-fi fan I know check out the following list:
+    <ul>
+        <li> <a href="/episodes/tt0112178/20">Star Trek: Voyager</a> </li>
+        <li> <a href="/episodes/tt0106145/20">Star Trek: Deep Space Nine</a> </li>
+    </ul>
+
+   {% endif %}
 {% endblock %}
