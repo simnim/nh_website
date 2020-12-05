@@ -18,7 +18,6 @@ select
 from tmp;
 drop table tmp;
 
-
 CREATE INDEX IF NOT EXISTS
 episode_tconst_idx
 on episode (
@@ -43,8 +42,17 @@ on ratings (
         tconst
     );
 
+-- create show names full text index
+CREATE VIRTUAL TABLE show_names_fts
+USING fts5(primaryTitle, originalTitle, content='basics');
 
+-- populate index
+INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle)
+select rowid, "primaryTitle", "originalTitle"
+from basics
+where titleType = 'tvSeries';
 
+-- Add percent_rank and index so we can get top episodes fast
 alter table ratings add column percent_rank float;
 with percent_ranks as (
     select
