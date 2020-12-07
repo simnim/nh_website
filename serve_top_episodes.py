@@ -38,12 +38,14 @@ class IMDbForm(FlaskForm):
 
 
 class Searcher(Resource):
-    def get(self, search_str):
+    def get(self):
         # Remove special characters and allow for prefix searches with *
         # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
         query_str = (
             "* AND ".join(
-                re.sub(r"[^a-z0-9\s]+", "", search_str.strip().lower()).split()
+                re.sub(
+                    r"[^a-z0-9\s]+", "", request.args["term"].strip().lower()
+                ).split()
             )
             + "*"
         )
@@ -53,7 +55,7 @@ class Searcher(Resource):
         ]
 
 
-api.add_resource(Searcher, "/search/<string:search_str>")
+api.add_resource(Searcher, "/search")
 
 
 @app.route("/", methods=["GET", "POST"])
