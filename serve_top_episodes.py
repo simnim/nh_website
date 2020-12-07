@@ -37,6 +37,7 @@ class IMDbForm(FlaskForm):
     submit = SubmitField("Show the best episodes")
 
 
+# Called by the jqueryui autocomplete widget.
 class Searcher(Resource):
     def get(self):
         # Remove special characters and allow for prefix searches with *
