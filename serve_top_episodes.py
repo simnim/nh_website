@@ -1,9 +1,11 @@
 import os
+import re
 import sqlite3
 
 import aiosql
 from flask import Flask, redirect, render_template, request, url_for
 from flask_mobility import Mobility
+from flask_restful import Api, Resource
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField, SubmitField
 
@@ -26,12 +28,32 @@ QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "derps"
 Mobility(app)
+api = Api(app)
 
 
 class IMDbForm(FlaskForm):
     imdb_show_id = StringField("IMDb Show ID")
     max_rank_pct = IntegerField("Max Rank Percent")
     submit = SubmitField("Show the best episodes")
+
+
+class Searcher(Resource):
+    def get(self, search_str):
+        # Remove special characters and allow for prefix searches with *
+        # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
+        query_str = (
+            "* AND ".join(
+                re.sub(r"[^a-z0-9\s]+", "", search_str.strip().lower()).split()
+            )
+            + "*"
+        )
+        return [
+            dict(r)
+            for r in QUERIES.search_show_names_in_full_text_index(conn, query_str)
+        ]
+
+
+api.add_resource(Searcher, "/search/<string:search_str>")
 
 
 @app.route("/", methods=["GET", "POST"])
