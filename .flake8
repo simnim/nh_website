@@ -1,0 +1,8 @@
+# inspired by https://ljvmiranda921.github.io/notebook/2018/06/21/precommits-using-black-and-flake8/
+[flake8]
+# E203 for black https://black.readthedocs.io/en/stable/compatible_configs.html
+# E266 because I like using ### sometimes
+# W503 because of a dumb conflict with black
+ignore = E203, E266, W503
+max-line-length = 127
+max-complexity = 10
