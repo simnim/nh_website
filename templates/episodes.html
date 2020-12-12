@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container bg-light rounded pt-3">
+  <div class="container bg-light rounded pt-3">
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <div class="form-row">
@@ -30,10 +30,10 @@
         });
     </script>
     <hr>
-    {% if imdb_show_id is not none %}
+  {% if imdb_show_id is not none %}
 
     <div>
-        <table class="table table-bordered">
+        <table class="table table-sm table-bordered">
             <tr> <td> Show Name </td> <td> {{ show_meta.primaryTitle }} </td> </tr>
             <tr> <td> Start Year </td> <td> {{ show_meta.startYear }} </td> </tr>
             <tr> <td> Typical Runtime </td> <td> {{ show_meta.runtimeMinutes }} min</td> </tr>
@@ -41,7 +41,7 @@
         </table>
         <hr>
     </div>
-    <table class="table table-hover table-sm table-striped">
+    <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
                 <th> Index<sub><sub>1</sub></sub> </th>
@@ -50,7 +50,7 @@
                 <th> Title </th>
                 <th> Average Rating </th>
                 <th> Num Votes </th>
-                <th> Ratings Percentile </th>
+                <th> Overall Rank </th>
             </tr>
         </thead>
         <tbody>
@@ -62,31 +62,28 @@
                     <td> {{ episode.primaryTitle }} </td>
                     <td> {{ episode.averageRating }} </td>
                     <td> {{ episode.numVotes }} </td>
-                    <td> {{ (100-episode.percent_rank)|round()|int }} </td>
+                    <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
                 </tr>
             {% endfor %}
     </tbody>
     </table>
 
-    {% else %}
+  {% else %}
 
-    Hello and welcome to Top Episodes.
-    <p>
-    This page applies the power law to TV so you can get 4 times more utility for your time. ( 80%/(1-80%) = 4 )
-    <p>
-    Essentially you are filtering out the bottom 80% of the episodes of a show and only keeping the top 20% of the content.
-    <p>
-    Some shows are not serial at all (no connection/memory from show N to N+1) and for those you might want to start out with an a very strict 5% filter and expand to 20% only if you felt like you enjoyed the 5%. Some cult classics might only have a few good ones (at least in your opinion) so 1% might be all that's worth watching to start!!!
-    <p>
-    Every show is different. Some shows require you to watch every episode to understand the story. For those you might want to filter out only a handful of episodes or none at all (keep 80% to 100%).
-    <p>
-    For a list of sci-fi favorites recommended by the #1 biggest sci-fi fan I know check out the following list:
-    <ul>
-        <li> <a href="/episodes/tt0112178/20">Star Trek: Voyager</a> </li>
-        <li> <a href="/episodes/tt0106145/20">Star Trek: Deep Space Nine</a> </li>
-        <li> <a href="/episodes/tt0407362/20">Battlestar Galactica</a> </li>
-    </ul>
+    <div class="container px-5">
+        <p> Hello and welcome to Top Episodes. </p>
+        <p> This page applies the power law to TV so you can get 4 times more utility for your time. ( 80%/(1-80%) = 4 ) </p>
+        <p> Essentially you are filtering out the bottom 80% of the episodes of a show and only keeping the top 20% of the content. </p>
+        <p> Some shows are not serial at all (no connection/memory from show N to N+1) and for those you might want to start out with an a very strict 5% filter and expand to 20% only if you felt like you enjoyed the 5%. Some cult classics might only have a few good ones (at least in your opinion) so 1% might be all that's worth watching to start!!! </p>
+        <p> Every show is different. Some shows require you to watch every episode to understand the story. For those you might want to filter out only a handful of episodes or none at all (keep 80% to 100%). </p>
+        <p> For a list of sci-fi favorites recommended by the #1 biggest sci-fi fan I know check out the following list: </p>
+        <ul>
+            <li> <a href="/episodes/tt0112178/20">Star Trek: Voyager</a> </li>
+            <li> <a href="/episodes/tt0106145/20">Star Trek: Deep Space Nine</a> </li>
+            <li> <a href="/episodes/tt0407362/20">Battlestar Galactica</a> </li>
+        </ul>
 
     </div>
-   {% endif %}
+  </div>
+  {% endif %}
 {% endblock %}
