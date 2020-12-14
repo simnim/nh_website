@@ -41,21 +41,38 @@
     <body>
 
     <nav class="navbar navbar-expand navbar-dark bg-dark">
-      <a class="navbar-brand" href="#">Nick Hahner</a>
+      {% if request.MOBILE is not none %}
+        <a class="navbar-brand" href="#">NH</a>
+      {% else %}
+        <a class="navbar-brand" href="#">Nick Hahner</a>
+      {% endif %}
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="/index">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="/top/cat">Top Cat</a></li>
-          <li class="nav-item"><a class="nav-link" href="/top/dog">Top Dog</a></li>
-          <li class="nav-item"><a class="nav-link" href="/episodes">Top Episodes</a></li>
+          {% if request.MOBILE is not none %}
+            <li class="nav-item"><a class="nav-link" href="/index"> ? </a></li>
+            <li class="nav-item"><a class="nav-link" href="/top/cat">Top 🐱</a></li>
+            <li class="nav-item"><a class="nav-link" href="/top/dog">Top 🐶</a></li>
+            <li class="nav-item"><a class="nav-link" href="/episodes">Top 📺</a></li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="/index">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="/top/cat">Top Cat</a></li>
+            <li class="nav-item"><a class="nav-link" href="/top/dog">Top Dog</a></li>
+            <li class="nav-item"><a class="nav-link" href="/episodes">Top Episodes</a></li>
+          {% endif %}
         </ul>
         </div>
+        {% if request.MOBILE is not none %}
+        <div class="nav-item ml-auto">
+          <a href="https://www.buymeacoffee.com/simnim" title="Buy me a coffee" class="coffee">☕</a>
+        </div>
+        {% else %}
         <div class="nav-item ml-auto">
           <a href="https://www.buymeacoffee.com/simnim" title="Buy me a coffee" class="coffee"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy me a coffee"></a>
         </div>
+        {% endif %}
     </nav>
 
   {% block content %}{% endblock %}

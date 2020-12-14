@@ -32,8 +32,8 @@ api = Api(app)
 
 
 class IMDbForm(FlaskForm):
-    imdb_show_id = StringField("IMDb Show ID (type in show name to query)")
-    max_rank_pct = IntegerField("Max Overall Rank Percentage")
+    imdb_show_id = StringField("Show Name")
+    max_rank_pct = IntegerField("Keep top ___ percent")
     submit = SubmitField("Show the best episodes")
 
 
