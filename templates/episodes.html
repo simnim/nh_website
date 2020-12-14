@@ -44,25 +44,45 @@
     <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
-                <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
-                <th> S </th>
-                <th> Ep </th>
-                <th> Title </th>
-                <th> Average Rating </th>
-                <!-- <th> Num Votes </th> -->
-                <th> Overall Rank </th>
+                {% if request.MOBILE is not none %}
+                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
+                    <th> S </th>
+                    <th> Ep </th>
+                    <th> Title </th>
+                    <th> ⭐ </th>
+                    <!-- <th> Num Votes </th> -->
+                    <th> Overall Rank </th>
+                {% else %}
+                    <th> Index<sub><sub>1</sub></sub> </th>
+                    <th> Season # </th>
+                    <th> Episode # </th>
+                    <th> Title </th>
+                    <th> Num Votes </th>
+                    <th> Average Rating </th>
+                    <th> Overall Rank (1=best)</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
             {% for episode in episodes %}
                 <tr>
-                    <!-- <td> {{ loop.index }}</td> -->
-                    <td> {{ episode.seasonNumber }} </td>
-                    <td> {{ episode.episodeNumber }} </td>
-                    <td> {{ episode.primaryTitle }} </td>
-                    <td> {{ episode.averageRating }} </td>
-                    <!-- <td> {{ episode.numVotes }} </td> -->
-                    <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
+                    {% if request.MOBILE is not none %}
+                        <!-- <td> {{ loop.index }}</td> -->
+                        <td> {{ episode.seasonNumber }} </td>
+                        <td> {{ episode.episodeNumber }} </td>
+                        <td> {{ episode.primaryTitle }} </td>
+                        <td> {{ episode.averageRating }} </td>
+                        <!-- <td> {{ episode.numVotes }} </td> -->
+                        <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
+                    {% else %}
+                        <td> {{ loop.index }}</td>
+                        <td> {{ episode.seasonNumber }} </td>
+                        <td> {{ episode.episodeNumber }} </td>
+                        <td> {{ episode.primaryTitle }} </td>
+                        <td> {{ episode.averageRating }} </td>
+                        <td> {{ episode.numVotes }} </td>
+                        <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
     </tbody>
