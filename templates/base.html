@@ -42,9 +42,9 @@
 
     <nav class="navbar navbar-expand navbar-dark bg-dark">
       {% if request.MOBILE is not none %}
-        <a class="navbar-brand" href="#">NH</a>
+        <a class="navbar-brand" href="/index">NH</a>
       {% else %}
-        <a class="navbar-brand" href="#">Nick Hahner</a>
+        <a class="navbar-brand" href="/index">Nick Hahner</a>
       {% endif %}
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -52,12 +52,10 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           {% if request.MOBILE is not none %}
-            <li class="nav-item"><a class="nav-link" href="/index"> ? </a></li>
             <li class="nav-item"><a class="nav-link" href="/top/cat">Top 🐱</a></li>
             <li class="nav-item"><a class="nav-link" href="/top/dog">Top 🐶</a></li>
             <li class="nav-item"><a class="nav-link" href="/episodes">Top 📺</a></li>
           {% else %}
-            <li class="nav-item"><a class="nav-link" href="/index">About site</a></li>
             <li class="nav-item"><a class="nav-link" href="/top/cat">Top Cat</a></li>
             <li class="nav-item"><a class="nav-link" href="/top/dog">Top Dog</a></li>
             <li class="nav-item"><a class="nav-link" href="/episodes">Top Episodes</a></li>

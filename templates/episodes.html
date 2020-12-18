@@ -5,14 +5,14 @@
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <div class="form-row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-8">
               {{ form.imdb_show_id.label }} <br>
               {{ form.imdb_show_id(size=32, value=(imdb_show_id or ''), class_="autocomplete") }}
               {% for error in form.imdb_show_id.errors %}
               <span style="color: red;">[{{ error }}]</span>
               {% endfor %}
             </div>
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-4">
               {{ form.max_rank_pct.label }} <br>
               {{ form.max_rank_pct(size=32, value=(max_rank_pct or '')) }}
               {% for error in form.max_rank_pct.errors %}
@@ -51,7 +51,7 @@
                     <th> Title </th>
                     <th> ⭐ </th>
                     <!-- <th> Num Votes </th> -->
-                    <th> Overall Rank </th>
+                    <th class="text-right"> <small><strong>Top Percentile</strong></small> </th>
                 {% else %}
                     <th> Index<sub><sub>1</sub></sub> </th>
                     <th> Season # </th>
@@ -59,7 +59,7 @@
                     <th> Title </th>
                     <th> Num Votes </th>
                     <th> Average Rating </th>
-                    <th> Overall Rank (1=best)</th>
+                    <th class="text-right"> Top Percentile (100=best)</th>
                 {% endif %}
             </tr>
         </thead>
@@ -73,7 +73,7 @@
                         <td> {{ episode.primaryTitle }} </td>
                         <td> {{ episode.averageRating }} </td>
                         <!-- <td> {{ episode.numVotes }} </td> -->
-                        <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
+                        <td class="text-right"> {{ (100-episode.percent_rank)|round()|int }} </td>
                     {% else %}
                         <td> {{ loop.index }}</td>
                         <td> {{ episode.seasonNumber }} </td>
@@ -81,7 +81,7 @@
                         <td> {{ episode.primaryTitle }} </td>
                         <td> {{ episode.averageRating }} </td>
                         <td> {{ episode.numVotes }} </td>
-                        <td class="text-right"> {{ (1+0.99*episode.percent_rank)|round()|int }} </td>
+                        <td class="text-right"> {{ (100-episode.percent_rank)|round()|int }} </td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -92,7 +92,7 @@
 
     <div class="container px-5">
         <p> Hello and welcome to Top Episodes. </p>
-        <p> This page applies the <a href="https://en.m.wikipedia.org/wiki/Pareto_principle">Pareto principle</a> to TV series so you can get 4 times more <a href="https://en.wiktionary.org/wiki/util">utils</a> for your time. </p>
+        <p> This page applies the <a href="https://en.wikipedia.org/wiki/Pareto_principle">Pareto principle</a> to TV series so you can get 4 times more <a href="https://en.wiktionary.org/wiki/util">utils</a> for your time. </p>
         <p> Essentially, by watching just the top 20% of episodes, you get 80% of the value of the whole series. This means in the same amount of time you can watch 5x more series getting 80% of the value of each, which maths to 4x the bang for your buck 🤓</p>
         <p> If a show does not sound super exciting but your friends love it, might as well start with the top 5% and expand to 20% if you felt like you enjoyed the 5%. Some cult classics might only have a few good ones (at least in your opinion) so 1% might be all that's worth watching to start, but you can at least say you gave it a shot. </p>
         <p> Of course this does not apply to every TV show, but it works for most. Some shows require you to watch every episode to understand the story. For those you might want to filter out only a handful of episodes or none at all (keep 80% to 100%). </p>

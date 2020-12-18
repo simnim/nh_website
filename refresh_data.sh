@@ -16,7 +16,7 @@ mv title.episode.tsv episode.tsv
 mv title.ratings.tsv ratings.tsv
 
 # Import the data into a sqlite db
-ls *.tsv | csv-to-sqlite -D -t full -x$'\t' -o ~/imdb.db
+ls *.tsv | csvs-to-sqlite --replace-tables -s $'\t' *.tsv ~/imdb.db
 
 # Remove temp files
 rm *.tsv

@@ -60,7 +60,7 @@ set percent_rank = percent_ranks.pct_rnk * 100
 from percent_ranks
 where ratings.tconst = percent_ranks.tconst;
 
--- Add number of ratings for shows
+-- Add number of ratings for shows so we can sort by it with the search box
 alter table basics add column totalvotes int;
 with countvotes as (
     select
@@ -81,10 +81,11 @@ on basics (
         totalvotes
     );
 
+
 -- create show names full text index
+drop table if exists show_names_fts;
 CREATE VIRTUAL TABLE show_names_fts
 USING fts5(primaryTitle, originalTitle, content='basics');
-
 -- populate index
 INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle)
 select rowid, "primaryTitle", "originalTitle"

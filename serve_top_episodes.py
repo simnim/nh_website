@@ -1,6 +1,7 @@
 import os
 import re
 import sqlite3
+import sys
 
 import aiosql
 from flask import Flask, redirect, render_template, request, url_for
@@ -26,15 +27,26 @@ QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
 # Got some great tips from https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-ii-templates
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "derps"
+DEFAULT_SECRET = "df9c1bc3-9a9e-4b0c-804f-fa5e27a5572a"
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY") or DEFAULT_SECRET
+if app.config["SECRET_KEY"] == DEFAULT_SECRET:
+    print(
+        "#WARNING: Using default secret key... please set it before going live",
+        file=sys.stderr,
+    )
 Mobility(app)
 api = Api(app)
 
 
 class IMDbForm(FlaskForm):
-    imdb_show_id = StringField("Show Name")
-    max_rank_pct = IntegerField("Keep top ___ percent")
+    imdb_show_id = StringField("Show Name Search (or IMDb show ID)")
+    max_rank_pct = IntegerField("Show top __% percent (below)")
     submit = SubmitField("Show the best episodes")
+
+
+def clean_txt(txt):
+    "lower case and remove special characters"
+    return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"\s+", " ", txt.strip().lower()))
 
 
 # Called by the jqueryui autocomplete widget.
@@ -42,16 +54,9 @@ class Searcher(Resource):
     def get(self):
         # Remove special characters and allow for prefix searches with *
         # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
-        query_str = (
-            "* AND ".join(
-                re.sub(
-                    r"[^a-z0-9\s]+", "", request.args["term"].strip().lower()
-                ).split()
-            )
-            + "*"
-        )
+        query_str = "* AND ".join(clean_txt(request.args["term"]).split()) + "*"
         return [
-            dict(r)
+            r["label"]
             for r in QUERIES.search_show_names_in_full_text_index(conn, query_str)
         ]
 
@@ -71,10 +76,15 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
     form = IMDbForm()
     if request.method == "POST":
         if form.imdb_show_id.data:
+            # extract out imdb id (or None if not provided)
+            clean_imdb_id = (
+                re.findall("tt[0-9]+", clean_txt(form.imdb_show_id.data)) or [None]
+            )[0]
+            print(clean_imdb_id)
             return redirect(
                 url_for(
                     "only_powerful_episodes",
-                    imdb_show_id=form.imdb_show_id.data or None,
+                    imdb_show_id=clean_imdb_id or None,
                     max_rank_pct=form.max_rank_pct.data or None,
                 )
             )
