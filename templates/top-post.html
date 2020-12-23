@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container bg-light rounded pt-3">
+    <div>
+         Fully automated. All posts come from /r/aww and are filtered for "{{ label }}" label using the google vision api.
+        <hr>
+    </div>
+    {% for post in posts %}
+        <div>
+            Noticed @ {{ post.noticed_at }}
+            <h3> {{ post.title }} </h3>
+            {% if post.type == 'video' %}
+                <video class="mx-auto d-block mw-100" controls>
+                    <source src={{ post.media }} type="video/mp4" >
+                </video>
+            {% else %}
+                <img src={{ post.media }} alt="{{ post.title }}" class="mx-auto d-block mw-100">
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+    <script type="text/javascript" src="{{ url_for('static', filename='script.js') }}"></script>
+</div>
+{% endblock %}

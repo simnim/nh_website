@@ -2,6 +2,9 @@ import os
 import re
 import sqlite3
 import sys
+import mimetypes
+import os
+import sqlite3
 
 import aiosql
 from flask import Flask, redirect, render_template, request, url_for
@@ -11,18 +14,25 @@ from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField, SubmitField
 
 # from wtforms.validators import DataRequired
-
 if hasattr(__builtins__, "__IPYTHON__"):
     THIS_SCRIPT_DIR = os.getcwd()
 else:
     THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-DB_FILE_LOC = "~/imdb.db"
+###FIXME: do the config proper
+# from top_cat import get_config
+DB_FILE_LOC = "~/.top_cat/db"
+db_file_loc = os.path.expanduser(DB_FILE_LOC)
+cat_conn = sqlite3.connect(db_file_loc, check_same_thread=False)
+cat_conn.row_factory = sqlite3.Row
 
 # We're just reading... so I think it's safe to share the connection on multiple threads
-conn = sqlite3.connect(os.path.expanduser(DB_FILE_LOC), check_same_thread=False)
-conn.row_factory = sqlite3.Row
-QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
+DB_FILE_LOC = "~/imdb.db"
+tv_conn = sqlite3.connect(os.path.expanduser(DB_FILE_LOC), check_same_thread=False)
+tv_conn.row_factory = sqlite3.Row
+ALL_QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
+CAT_QS = ALL_QUERIES.topcat
+TV_QS = ALL_QUERIES.episodes
 
 # Got some great tips from https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-ii-templates
 
@@ -57,15 +67,15 @@ class Searcher(Resource):
         query_str = "* AND ".join(clean_txt(request.args["term"]).split()) + "*"
         return [
             r["label"]
-            for r in QUERIES.search_show_names_in_full_text_index(conn, query_str)
+            for r in TV_QS.search_show_names_in_full_text_index(tv_conn, query_str)
         ]
 
 
 api.add_resource(Searcher, "/search")
 
 
-@app.route("/", methods=["GET", "POST"])
-@app.route("/index", methods=["GET", "POST"])
+# @app.route("/", methods=["GET", "POST"])
+# @app.route("/index", methods=["GET", "POST"])
 @app.route("/episodes", methods=["GET", "POST"])
 @app.route("/episodes/<string:imdb_show_id>", methods=["GET", "POST"])
 @app.route(
@@ -90,9 +100,9 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             )
         else:
             return redirect(url_for("only_powerful_episodes"))
-    show_meta = QUERIES.get_basic_show_info(conn, imdb_show_id=imdb_show_id)
-    episodes = QUERIES.get_top_episodes_for_show(
-        conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct
+    show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id)
+    episodes = TV_QS.get_top_episodes_for_show(
+        tv_conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct
     )
     return render_template(
         "episodes.html",
@@ -102,3 +112,22 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         episodes=episodes,
         form=form,
     )
+
+
+
+@app.route("/")
+@app.route("/index")
+def index():
+    return render_template("index.html")
+
+# Just fetch the most recent 10 top posts
+@app.route("/top/<string:label>")
+def show_subpath(label):
+    title = f"Top {label}"
+    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label)
+    # We need to know if the url is for a video or a picture!
+    posts = [
+        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
+        for post in posts
+    ]
+    return render_template("top-post.html", title=title, posts=posts, label=label)
