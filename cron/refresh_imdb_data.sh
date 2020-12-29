@@ -4,7 +4,7 @@ set -Eeuxo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_DIR="$( cd "$SCRIPT_DIR" && git rev-parse --show-toplevel )"
 
-DB_FILE_LOC="~/imdb.db"
+DB_FILE_LOC="$HOME/imdb.db"
 
 # Hop into a temp directory
 pushd $(mktemp -d)
