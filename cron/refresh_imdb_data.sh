@@ -2,6 +2,9 @@
 set -Eeuxo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_DIR="$( cd "$SCRIPT_DIR" && git rev-parse --show-toplevel )"
+
+DB_FILE_LOC="~/imdb.db"
 
 # Hop into a temp directory
 pushd $(mktemp -d)
@@ -16,7 +19,7 @@ mv title.episode.tsv episode.tsv
 mv title.ratings.tsv ratings.tsv
 
 # Import the data into a sqlite db
-ls *.tsv | csvs-to-sqlite --replace-tables -s $'\t' *.tsv ~/imdb.db
+ls *.tsv | csvs-to-sqlite --replace-tables -s $'\t' *.tsv ${DB_FILE_LOC}
 
 # Remove temp files
 rm *.tsv
@@ -24,4 +27,4 @@ rm *.tsv
 popd
 
 # Add the indexes and show ranks
-cat ${SCRIPT_DIR}/sql/add-indexes-and-ranks.sql | sqlite3 ~/imdb.db
+cat ${REPO_DIR}/sql/episodes/add-indexes-and-ranks.sql | sqlite3 ${DB_FILE_LOC}

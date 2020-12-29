@@ -2,14 +2,31 @@
 
 {% block content %}
     <div class="container bg-light rounded pt-3">
-        <p>( Click ⬆"Top Cat" or ⬆"Top Dog" in the navbar to see top cats and dogs )</p>
-        <p>This app aims to bring a little joy to your day with cute animal pictures. All the content you'll see is taken directly from /r/aww. Credit goes to the original posters. Bookmark and check back in every few days for fresh top cats and dogs. </p>
-        <img src="{{ url_for('static', filename='topcat_index.jpg') }}" alt="top cat" class="rounded mx-auto d-block mw-100">
-        <p>Please note that this app is totally automated and relies on computer vision to figure out if a picture has a cat or dog in it. Of course sometimes these vision models get confused, but these mistakes are usually very interesing! If you spot a mistake, take a minute to wonder why the vision model got confused.</p>
-        <p>To learn how I implemented this webpage, please check out my <a href="https://github.com/simnim/top-cat">github</a> page for the project details. It's BSD liscenced, so feel free to fork it, just give me a shoutout if you do.</p>
-        <p>My main profession is bioinformatics. This was my COVID19 <strike><i>lockdown</i></strike> vacation hobby project. I wanted to learn more about state of the art in computer vision tooling and how to properly share that awesomeness with the world. Had a fruitful and interesting time learning about opencv, tensorflow research models, flask, aiosql, etc.</p>
-        <p>If you would like to support this page, please feel free to buy me a coffee using the link in the navbar.</p>
-        <p>This project used to be hosted on <a href="https://www.facebook.com/top.felis.catus/">facebook</a> but I no longer maintain that page</p>
-        <p>Nick Hahner - 2020</p>
+        <h1>How to navigate</h1>
+        <p>Click ⬆"Top Cat" or ⬆"Top Dog" in the navbar to see top cats and dogs</p>
+        <p>Click ⬆"Top Episodes" to see the pareto principle applied to TV</p>
+        <p>Click ↗️"Buy me a Coffee" to toss me a Nickel or two</p>
+    </div>
+        <div class="container bg-light rounded pt-3">
+        <h1>Top Cat (and Top Dog)</h1>
+            <p>This app aims to bring a little joy to your day with cute animal pictures. All the content you'll see is taken directly from /r/aww. Credit goes to the original posters. Bookmark and check back in every few days for fresh top cats and dogs. </p>
+            <img src="{{ url_for('static', filename='topcat_index.jpg') }}" alt="top cat" class="rounded mx-auto d-block mw-100">
+            <p>Please note that this app is totally automated and relies on computer vision to figure out if a picture has a cat or dog in it. Of course sometimes these vision models get confused, but these mistakes are usually very interesing! If you spot a mistake, take a minute to wonder why the vision model got confused.</p>
+            <p>To learn how I implemented this app, please check out my <a href="https://github.com/simnim/top-cat">github</a> page for the project details. It's BSD liscenced, so feel free to fork it, just give me a shoutout if you do.</p>
+            <p>This project used to be hosted on <a href="https://www.facebook.com/top.felis.catus/">facebook</a> but I no longer maintain that page</p>
+        </div>
+        <div class="container bg-light rounded pt-3">
+        <h1>Top Episodes</h1>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Long_tail.svg/500px-Long_tail.svg.png" alt="Pareto Principle Plot" class="rounded mx-auto d-block mw-100">
+            <p>TV is fun but a big time sink. Instead of wasting time and watching every episode, just watch the best. Save time, maximize your utility function, and get some culture while you're at it.</p>
+        </div>
+        <div class="container bg-light rounded pt-3">
+        <h1>About this site</h1>
+            <p>My main profession is bioinformatics. This website has been my COVID19 <strike><i>lockdown</i></strike> vacation hobby project. I wanted to learn more about the state of the art in computer vision tooling and how to properly share that awesomeness with the world. I also wanted to launch my own website / blog. It's been a fruitful and interesting time learning about flask, opencv, tensorflow research models, aiosql, etc.</p>
+            <p>If you would like to support this page, please feel free to buy me a coffee using the link in the navbar.</p>
+        </div>
+        <div class="container bg-light rounded pt-3">
+            <p>Nick Hahner - 2020</p>
+        </div>
     </div>
 {% endblock %}

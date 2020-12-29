@@ -90,7 +90,6 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             clean_imdb_id = (
                 re.findall("tt[0-9]+", clean_txt(form.imdb_show_id.data)) or [None]
             )[0]
-            print(clean_imdb_id)
             return redirect(
                 url_for(
                     "only_powerful_episodes",

@@ -1,5 +1,5 @@
 -- name: add_indexes_and_ranks#
--- clean up types from csv-to-sql then add indexes and the percent_ranks column to ratings.
+-- clean up types from csvs-to-sql then add indexes and the percent_ranks column to ratings.
 
 -- fix types for episode table
 ALTER TABLE episode RENAME TO tmp;
