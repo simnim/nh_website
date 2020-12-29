@@ -1,10 +1,8 @@
+import mimetypes
 import os
 import re
 import sqlite3
 import sys
-import mimetypes
-import os
-import sqlite3
 
 import aiosql
 from flask import Flask, redirect, render_template, request, url_for
@@ -19,7 +17,7 @@ if hasattr(__builtins__, "__IPYTHON__"):
 else:
     THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-###FIXME: do the config proper
+# FIXME: do the config proper
 # from top_cat import get_config
 DB_FILE_LOC = "~/.top_cat/db"
 db_file_loc = os.path.expanduser(DB_FILE_LOC)
@@ -46,6 +44,25 @@ if app.config["SECRET_KEY"] == DEFAULT_SECRET:
     )
 Mobility(app)
 api = Api(app)
+
+
+@app.route("/")
+@app.route("/index")
+def index():
+    return render_template("index.html")
+
+
+# Just fetch the most recent 10 top posts
+@app.route("/top/<string:label>")
+def show_subpath(label):
+    title = f"Top {label}"
+    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label)
+    # We need to know if the url is for a video or a picture!
+    posts = [
+        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
+        for post in posts
+    ]
+    return render_template("top-post.html", title=title, posts=posts, label=label)
 
 
 class IMDbForm(FlaskForm):
@@ -111,22 +128,3 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         episodes=episodes,
         form=form,
     )
-
-
-
-@app.route("/")
-@app.route("/index")
-def index():
-    return render_template("index.html")
-
-# Just fetch the most recent 10 top posts
-@app.route("/top/<string:label>")
-def show_subpath(label):
-    title = f"Top {label}"
-    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label)
-    # We need to know if the url is for a video or a picture!
-    posts = [
-        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
-        for post in posts
-    ]
-    return render_template("top-post.html", title=title, posts=posts, label=label)
