@@ -104,7 +104,6 @@ api.add_resource(Searcher, "/search")
     "/episodes/<string:imdb_show_id>/<int:max_rank_pct>", methods=["GET", "POST"]
 )
 def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
-    # For now just query for tt0112178 = star trek voyager and percent to keep of 20
     form = IMDbForm()
     if request.method == "POST":
         if form.imdb_show_id.data:
