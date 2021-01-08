@@ -11,23 +11,20 @@ from flask_restful import Api, Resource
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField, SubmitField
 
-# from wtforms.validators import DataRequired
-if hasattr(__builtins__, "__IPYTHON__"):
-    THIS_SCRIPT_DIR = os.getcwd()
-else:
-    THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-# FIXME: do the config proper
-# from top_cat import get_config
-DB_FILE_LOC = "~/.top_cat/db"
-db_file_loc = os.path.expanduser(DB_FILE_LOC)
-cat_conn = sqlite3.connect(db_file_loc, check_same_thread=False)
+CATS_DB_FILE_LOC = "~/.top_cat/db"
+# We're just reading... so I think it's safe to share the connection on multiple threads
+cat_conn = sqlite3.connect(
+    os.path.expanduser(CATS_DB_FILE_LOC), check_same_thread=False
+)
 cat_conn.row_factory = sqlite3.Row
 
+EPS_DB_FILE_LOC = "~/imdb.db"
 # We're just reading... so I think it's safe to share the connection on multiple threads
-DB_FILE_LOC = "~/imdb.db"
-tv_conn = sqlite3.connect(os.path.expanduser(DB_FILE_LOC), check_same_thread=False)
+tv_conn = sqlite3.connect(os.path.expanduser(EPS_DB_FILE_LOC), check_same_thread=False)
 tv_conn.row_factory = sqlite3.Row
+
 ALL_QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
 CAT_QS = ALL_QUERIES.topcat
 TV_QS = ALL_QUERIES.episodes
