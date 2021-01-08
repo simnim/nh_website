@@ -46,6 +46,11 @@ Mobility(app)
 api = Api(app)
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return redirect(url_for("static", filename="favicon.ico"))
+
+
 @app.route("/")
 @app.route("/index")
 def index():
