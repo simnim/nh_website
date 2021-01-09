@@ -16,6 +16,4 @@ Please see top_episodes.md
 
 
 # Liscence
-BSD.
-
-Please cite my website if you use anything from it, but remove my name otherwise.
+BSD. Please cite my website if you use anything from it, but remove my name from display otherwise.

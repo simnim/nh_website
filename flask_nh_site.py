@@ -93,8 +93,6 @@ class Searcher(Resource):
 api.add_resource(Searcher, "/search")
 
 
-# @app.route("/", methods=["GET", "POST"])
-# @app.route("/index", methods=["GET", "POST"])
 @app.route("/episodes", methods=["GET", "POST"])
 @app.route("/episodes/<string:imdb_show_id>", methods=["GET", "POST"])
 @app.route(
