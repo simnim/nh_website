@@ -59,7 +59,6 @@ def test_top_episodes_search_and_display_shows():
         wait.until(expected.visibility_of_element_located((By.NAME, "submit"))).click()
         page_source = driver.page_source
         driver.quit()
-        page_source
         assert (
             "<td> Star Trek: Voyager </td>" in page_source
             and "<td> Eye of the Needle </td>" in page_source
