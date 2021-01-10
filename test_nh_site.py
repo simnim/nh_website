@@ -5,6 +5,7 @@ import sys
 import time
 from contextlib import contextmanager
 
+import requests
 import selenium
 from selenium.webdriver.common.by import By
 
@@ -66,8 +67,6 @@ def test_top_episodes_search_and_display_shows():
 
 
 def test_index():
-    import requests
-
     with flask_app_server():
         req = requests.get(f"http://127.0.0.1:{TESTING_PORT}")
         # Make sure the index page loads and that it advertises my github
@@ -75,8 +74,6 @@ def test_index():
 
 
 def test_top_cat():
-    import requests
-
     with flask_app_server():
         req = requests.get(f"http://127.0.0.1:{TESTING_PORT}/top/cat")
         # Load top/cat and check that we got some cats
