@@ -6,7 +6,7 @@ Here you'll find just about everything you need, simply provide your own wsgi co
 Find documentation here: https://github.com/simnim/top-cat
 
 # Top Episodes
-Please see top_episodes.md
+Please see [top_episodes.md](top_episodes.md)
 
 
 # CRONs to maintain the site:
