@@ -1,0 +1,5 @@
+flask
+aiosql
+Flask-Mobility
+selenium
+pytest

@@ -99,6 +99,7 @@ api.add_resource(Searcher, "/search")
     "/episodes/<string:imdb_show_id>/<int:max_rank_pct>", methods=["GET", "POST"]
 )
 def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
+    title = "Top Episodes"
     form = IMDbForm()
     if request.method == "POST":
         if form.imdb_show_id.data:
@@ -126,4 +127,5 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         show_meta=show_meta,
         episodes=episodes,
         form=form,
+        title=title,
     )
