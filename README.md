@@ -12,7 +12,7 @@ Please see [top_episodes.md](top_episodes.md)
 # CRONs to maintain the site:
 * ../top_cat/top_cat.py every 5 minutes
     * NOTE: Not in this repo, look in top-cat repo
-* cron/refresh_imdb_data.sh
+* cron/refresh_imdb_data.sh once a week
 
 
 # Liscence
