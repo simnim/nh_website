@@ -71,7 +71,7 @@ with countvotes as (
     group by e.parentTconst
 )
 update basics
-set totalvotes = countvotes.totalvotes * 100
+set totalvotes = countvotes.totalvotes
 from countvotes
 where basics.tconst = countvotes.tconst;
 
