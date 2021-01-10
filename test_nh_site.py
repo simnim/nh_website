@@ -34,7 +34,11 @@ def flask_app_server():
 
 
 def test_top_episodes_search_and_display_shows():
-    # Taken from https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode
+    # simulate loading the top episodes page
+    # type "trek voyager" into the search box
+    # select the first menu item (should be the right one)
+    # check it loaded the right stuff
+    # inspired by from https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode
     with flask_app_server():
         options = selenium.webdriver.firefox.options.Options()
         options.add_argument("-headless")

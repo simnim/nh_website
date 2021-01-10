@@ -90,4 +90,4 @@ USING fts5(primaryTitle, originalTitle, content='basics');
 INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle)
 select rowid, "primaryTitle", "originalTitle"
 from basics
-where titleType = 'tvSeries';
+where titleType in ('tvSeries', 'tvMiniSeries');
