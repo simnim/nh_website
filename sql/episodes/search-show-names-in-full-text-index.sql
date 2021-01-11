@@ -6,9 +6,9 @@ SELECT
         || ' ['
         || b.startYear
         || '-'
-        || case when b.endYear = '\N' then '?' else b.endYear end
+        || case when b.endYear is null then '?' else b.endYear end
         || ']'
-        || ' ('
+        || ' (tt'
         || b.tconst
         || ')'
     ) as label,

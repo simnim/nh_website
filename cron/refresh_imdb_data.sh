@@ -27,4 +27,4 @@ rm *.tsv
 popd
 
 # Add the indexes and show ranks
-cat ${REPO_DIR}/sql/episodes/add-indexes-and-ranks.sql | sqlite3 ${DB_FILE_LOC}
+cat ${REPO_DIR}/sql/episodes/add-indexes-and-ranks.sql | sqlite3 -echo ${DB_FILE_LOC}

@@ -116,9 +116,10 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             )
         else:
             return redirect(url_for("only_powerful_episodes"))
-    show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id)
+    imdb_show_id_int = int(imdb_show_id.strip("t")) if imdb_show_id else imdb_show_id
+    show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
     episodes = TV_QS.get_top_episodes_for_show(
-        tv_conn, imdb_show_id=imdb_show_id, max_rank_pct=max_rank_pct
+        tv_conn, imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
     )
     return render_template(
         "episodes.html",
