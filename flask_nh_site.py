@@ -20,7 +20,7 @@ cat_conn = sqlite3.connect(
 )
 cat_conn.row_factory = sqlite3.Row
 
-EPS_DB_FILE_LOC = "~/imdb.db"
+EPS_DB_FILE_LOC = "/mnt/ssd/imdb.db"
 # We're just reading... so I think it's safe to share the connection on multiple threads
 tv_conn = sqlite3.connect(os.path.expanduser(EPS_DB_FILE_LOC), check_same_thread=False)
 tv_conn.row_factory = sqlite3.Row
