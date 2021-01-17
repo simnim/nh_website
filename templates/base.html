@@ -40,7 +40,7 @@
     <body>
 
     <nav class="navbar navbar-expand navbar-dark bg-dark">
-      {% if request.MOBILE is not none %}
+      {% if request.MOBILE %}
         <a class="navbar-brand" href="/index">NH</a>
       {% else %}
         <a class="navbar-brand" href="/index">Nick Hahner</a>
@@ -50,7 +50,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
-          {% if request.MOBILE is not none %}
+          {% if request.MOBILE %}
             <li class="nav-item"><a class="nav-link" href="/top/cat">Top 🐱</a></li>
             <li class="nav-item"><a class="nav-link" href="/top/dog">Top 🐶</a></li>
             <li class="nav-item"><a class="nav-link" href="/episodes">Top 📺</a></li>
@@ -61,7 +61,7 @@
           {% endif %}
         </ul>
         </div>
-        {% if request.MOBILE is not none %}
+        {% if request.MOBILE %}
         <div class="nav-item ml-auto">
           <a href="https://www.buymeacoffee.com/simnim" title="Buy me a coffee" class="coffee">☕</a>
         </div>

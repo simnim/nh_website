@@ -44,7 +44,7 @@
     <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
-                {% if request.MOBILE is not none %}
+                {% if request.MOBILE %}
                     <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
                     <th> S </th>
                     <th> Ep </th>
@@ -66,7 +66,7 @@
         <tbody>
             {% for episode in episodes %}
                 <tr>
-                    {% if request.MOBILE is not none %}
+                    {% if request.MOBILE %}
                         <!-- <td> {{ loop.index }}</td> -->
                         <td> {{ episode.seasonNumber }} </td>
                         <td> {{ episode.episodeNumber }} </td>

@@ -1,7 +1,7 @@
 aiosql
 csvs-to-sqlite
 flask
-Flask-Mobility
+Flask-Mobility>=1.1.0
 Flask-WTF
 flask_restful
 pytest
