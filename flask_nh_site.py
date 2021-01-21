@@ -78,16 +78,20 @@ def clean_txt(txt):
     return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"\s+", " ", txt.strip().lower()))
 
 
+def get_search_results_given_search_str(search_str, return_just_id=False):
+    # Remove special characters and allow for prefix searches with *
+    # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
+    query_str = "* AND ".join(clean_txt(search_str).split()) + "*"
+    return [
+        r["value"] if return_just_id else r["label"]
+        for r in TV_QS.search_show_names_in_full_text_index(tv_conn, query_str)
+    ]
+
+
 # Called by the jqueryui autocomplete widget.
 class Searcher(Resource):
     def get(self):
-        # Remove special characters and allow for prefix searches with *
-        # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
-        query_str = "* AND ".join(clean_txt(request.args["term"]).split()) + "*"
-        return [
-            r["label"]
-            for r in TV_QS.search_show_names_in_full_text_index(tv_conn, query_str)
-        ]
+        return get_search_results_given_search_str(request.args["term"])
 
 
 api.add_resource(Searcher, "/search")
@@ -103,10 +107,22 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
     form = IMDbForm()
     if request.method == "POST":
         if form.imdb_show_id.data:
-            # extract out imdb id (or None if not provided)
+            # They succesfully used the search popup menu: extract out the imdb id
             clean_imdb_id = (
                 re.findall("tt[0-9]+", clean_txt(form.imdb_show_id.data)) or [None]
             )[0]
+            # OR they didn't choose an entry from the menu, maybe they feel lucky?
+            if clean_imdb_id is None and len(clean_txt(form.imdb_show_id.data)) > 3:
+                # In case they eagerly hit enter without selecting a menu item then we
+                #  won't get an imdb id, but we'll have a reasonable search str so do
+                #  the search anyway and return the first result. I'm feeling lucky.
+                clean_imdb_id = (
+                    get_search_results_given_search_str(
+                        form.imdb_show_id.data, return_just_id=True
+                    )
+                    or [None]
+                )[0]
+            # At this point either we get an imdb show id or we got None
             return redirect(
                 url_for(
                     "only_powerful_episodes",
