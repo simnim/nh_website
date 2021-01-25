@@ -12,7 +12,7 @@ SELECT
         || b.tconst
         || ')'
     ) as label,
-    b.tconst as value
+    'tt'||b.tconst as value
 FROM
     show_names_fts(
             :search_str
