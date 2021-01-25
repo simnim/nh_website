@@ -7,7 +7,7 @@
         <div class="form-row">
             <div class="form-group col-md-8">
               {{ form.imdb_show_id.label }} <br>
-              {{ form.imdb_show_id(size=32, value=(imdb_show_id or ''), class_="autocomplete") }}
+              {{ form.imdb_show_id(size=32, value=(imdb_show_id or ''), class_="autocomplete", placeholder="type your search query here") }}
               {% for error in form.imdb_show_id.errors %}
               <span style="color: red;">[{{ error }}]</span>
               {% endfor %}
