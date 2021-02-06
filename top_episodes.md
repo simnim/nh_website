@@ -1,5 +1,5 @@
 # About this page:
-This website is explained on https://topcat.app/episodes/
+This website is explained on https://topcat.app/episodes
 
 ## How I load the data:
 * Grab tsvs from https://datasets.imdbws.com and load data in a sqlite database using csvs-to-sqlite.
