@@ -3,21 +3,21 @@
 {% block content %}
     <div class="container bg-light rounded pt-3">
         <h1>How to navigate</h1>
-        <p>Click ⬆"Top Cat" or ⬆"Top Dog" in the navbar to see top cats and dogs</p>
-        <p>Click ⬆"Top Episodes" to see the pareto principle applied to TV</p>
-        <p>Click ↗️"Buy me a Coffee" to toss me a Nickel or two</p>
+        <p>Click ⬆<a href="/top/cat">Top Cat</a> or ⬆<a href="/top/dog">Top Dog</a> in the navbar to see top cats and dogs</p>
+        <p>Click ⬆<a href="/episodes">Top Episodes<a> to see the pareto principle applied to TV</p>
+        <p>Click ↗️<a href="https://www.buymeacoffee.com/simnim">Buy me a Coffee</a> to toss me a Nickel or two</p>
     </div>
         <div class="container bg-light rounded pt-3">
-        <h1>Top Cat (and Top Dog)</h1>
+        <h1><a href="/top/cat">Top Cat</a> and <a href="/top/dog">Top Dog</a></h1>
             <p>This app aims to bring a little joy to your day with cute animal pictures. All the content you'll see is taken directly from /r/aww. Credit goes to the original posters. Bookmark and check back in every few days for fresh top cats and dogs. </p>
-            <img src="{{ url_for('static', filename='topcat_index.jpg') }}" alt="top cat" class="rounded mx-auto d-block mw-100">
+            <a href="/top/cat"><img src="{{ url_for('static', filename='topcat_index.jpg') }}" alt="top cat" class="rounded mx-auto d-block mw-100"></a>
             <p>Please note that this app is totally automated and relies on computer vision to figure out if a picture has a cat or dog in it. Of course sometimes these vision models get confused, but these mistakes are usually very interesing! If you spot a mistake, take a minute to wonder why the vision model got confused.</p>
             <p>To learn how I implemented this app, please check out my <a href="https://github.com/simnim/top-cat">github</a> page for the project details. It's BSD liscenced, so feel free to fork it, just give me a shoutout if you do.</p>
             <p>This project used to be hosted on <a href="https://www.facebook.com/top.felis.catus/">facebook</a> but I no longer maintain that page</p>
         </div>
         <div class="container bg-light rounded pt-3">
-        <h1>Top Episodes</h1>
-            <img src="{{ url_for('static', filename='pareto_plot.png') }}" alt="Pareto Principle Plot" class="rounded mx-auto d-block mw-100">
+        <h1><a href="/episodes">Top Episodes</a></h1>
+            <a href="/episodes"><img src="{{ url_for('static', filename='pareto_plot.png') }}" alt="Pareto Principle Plot" class="rounded mx-auto d-block mw-100"></a>
             <p>TV is fun but a big time sink. Instead of wasting time and watching every episode, just watch the best. Save time, maximize your utility function, and get some culture while you're at it.</p>
         </div>
         <div class="container bg-light rounded pt-3">

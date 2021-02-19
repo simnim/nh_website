@@ -41,9 +41,9 @@
 
     <nav class="navbar navbar-expand navbar-dark bg-dark">
       {% if request.MOBILE %}
-        <a class="navbar-brand" href="/index">NH</a>
+        <a class="navbar-brand btn btn-outline-secondary" href="/index">NH</a>
       {% else %}
-        <a class="navbar-brand" href="/index">Nick Hahner</a>
+        <a class="navbar-brand btn btn-outline-secondary" href="/index">Nick Hahner</a>
       {% endif %}
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -51,18 +51,18 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           {% if request.MOBILE %}
-            <li class="nav-item"><a class="nav-link" href="/top/cat">Top 🐱</a></li>
-            <li class="nav-item"><a class="nav-link" href="/top/dog">Top 🐶</a></li>
-            <li class="nav-item"><a class="nav-link" href="/episodes">Top 📺</a></li>
+            <li class="nav-item btn btn-sm btn-outline-primary"><a class="nav-link" href="/top/cat">🐱</a></li>
+            <li class="nav-item btn btn-sm btn-outline-info"><a class="nav-link" href="/top/dog">🐶</a></li>
+            <li class="nav-item btn btn-sm btn-outline-success"><a class="nav-link" href="/episodes">📺</a></li>
           {% else %}
-            <li class="nav-item"><a class="nav-link" href="/top/cat">Top Cat</a></li>
-            <li class="nav-item"><a class="nav-link" href="/top/dog">Top Dog</a></li>
-            <li class="nav-item"><a class="nav-link" href="/episodes">Top Episodes</a></li>
+            <li class="nav-item"><a class="nav-link btn btn-outline-primary" href="/top/cat">Top Cat</a></li>
+            <li class="nav-item"><a class="nav-link btn btn-outline-info" href="/top/dog">Top Dog</a></li>
+            <li class="nav-item"><a class="nav-link btn btn-outline-success" href="/episodes">Top Episodes</a></li>
           {% endif %}
         </ul>
         </div>
         {% if request.MOBILE %}
-        <div class="nav-item ml-auto">
+        <div class="nav-item ml-auto  btn btn-outline-info">
           <a href="https://www.buymeacoffee.com/simnim" title="Buy me a coffee" class="coffee">☕</a>
         </div>
         {% else %}
