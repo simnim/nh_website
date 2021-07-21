@@ -14,8 +14,6 @@ from selenium.webdriver.support import expected_conditions as expected
 
 TESTING_PORT = 5555
 
-derp_file = open("derp", "w")
-
 
 @pytest.fixture
 def flask_app_server():
@@ -44,6 +42,24 @@ def flask_app_server():
     flask_proc.kill()
 
 
+def test_runs_at_all(flask_app_server):
+    if flask_app_server.poll() is not None:
+        print(flask_app_server.stderr.read().decode("utf-8"), file=sys.stderr)
+    assert flask_app_server.poll() is None
+
+
+def test_index(flask_app_server):
+    req = requests.get(f"http://127.0.0.1:{TESTING_PORT}")
+    # Make sure the index page loads and that it advertises my github
+    assert req.ok and "https://github.com/simnim/top-cat" in req.text
+
+
+def test_top_cat(flask_app_server):
+    req = requests.get(f"http://127.0.0.1:{TESTING_PORT}/top/cat")
+    # Load top/cat and check that we got some cats
+    assert req.ok and len(re.findall("<hr>", req.text)) > 2
+
+
 def test_top_episodes_search_and_display_shows(flask_app_server):
     # simulate loading the top episodes page
     # type "trek voyager" into the search box
@@ -66,21 +82,3 @@ def test_top_episodes_search_and_display_shows(flask_app_server):
         "<td> Star Trek: Voyager </td>" in page_source
         and "<td> Eye of the Needle </td>" in page_source
     )
-
-
-def test_index(flask_app_server):
-    req = requests.get(f"http://127.0.0.1:{TESTING_PORT}")
-    # Make sure the index page loads and that it advertises my github
-    assert req.ok and "https://github.com/simnim/top-cat" in req.text
-
-
-def test_top_cat(flask_app_server):
-    req = requests.get(f"http://127.0.0.1:{TESTING_PORT}/top/cat")
-    # Load top/cat and check that we got some cats
-    assert req.ok and len(re.findall("<hr>", req.text)) > 2
-
-
-def test_runs_at_all(flask_app_server):
-    if flask_app_server.poll() is not None:
-        print(flask_app_server.stderr.read().decode("utf-8"), file=sys.stderr)
-    assert flask_app_server.poll() is None
