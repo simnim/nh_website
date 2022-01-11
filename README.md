@@ -17,3 +17,11 @@ Please see [top_episodes.md](top_episodes.md)
 
 # Liscence
 BSD. Please cite my website if you use anything from it, but remove my name from display otherwise.
+
+# Support my work:
+* Dollars:
+    * https://www.buymeacoffee.com/simnim
+* Bitcoin:
+    * 1HgfshpzDQErwEDvhB7RXWWxPGsE1Q9Mxy
+* Etherium
+    * 0x70c8565654059dcD4712487B339B241bcc95B625
