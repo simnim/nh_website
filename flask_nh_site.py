@@ -148,3 +148,18 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         form=form,
         title=title,
     )
+
+
+# Just fetch the most recent 10 top posts
+@app.route("/permalink/<string:media_hash>", methods=["GET", "POST"])
+@app.route("/permalink/<string:media_hash>/<string:ts_ins>", methods=["GET", "POST"])
+def permalink_top(media_hash, ts_ins=None):
+    posts = CAT_QS.get_posts_for_hash(cat_conn, media_hash, ts_ins)
+    # We need to know if the url is for a video or a picture!
+    posts = [
+        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
+        for post in posts
+    ]
+    return render_template(
+        "permalink.html", media_hash=media_hash, ts_ins=ts_ins, posts=posts
+    )

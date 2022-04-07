@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <div class="container bg-light rounded pt-3">
+    {{ media_hash }} @ {{ ts_ins }}
+    {% for post in posts %}
+        <div>
+            Posted @ {{ post.posted_at }}
+            {% if post.top_labels %}
+            <br>
+            {{ post.top_labels }}
+            {% endif %}
+            <h3> {{ post.title }} </h3>
+            {% if post.type == 'video' %}
+                <video class="mx-auto d-block mw-100" controls>
+                    <source src={{ post.media }} type="video/mp4" >
+                </video>
+            {% else %}
+                <img src={{ post.media }} alt="{{ post.title }}" class="mx-auto d-block mw-100">
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+  </div>
+{% endblock %}
