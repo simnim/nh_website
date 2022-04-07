@@ -21,5 +21,5 @@ group by
     , p.ts_ins
     , p.media_hash
 
-order by tp.ts_ins asc
+order by p.ts_ins desc
 ;
