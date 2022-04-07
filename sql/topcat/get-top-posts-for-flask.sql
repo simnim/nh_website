@@ -4,6 +4,7 @@ select
       p.url as media
     , p.title
     , p.ts_ins as noticed_at
+    , p.media_hash
 from
         top_post tp
     join post p using (post_id)
