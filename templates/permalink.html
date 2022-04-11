@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <div class="container bg-light rounded pt-3">
+    {% for post in posts %}
+        <div>
+            <div class="d-flex">
+              <div>Posted @ {{ post.posted_at }}</div>
+              <div class="ml-auto">{% if post.top_labels %}{{ post.top_labels }}{% endif %}</div>
+            </div>
+            <h3> {{ post.title }} </h3>
+            {% if post.type == 'video' %}
+                <video class="mx-auto d-block mw-100" controls>
+                    <source src={{ post.media }} type="video/mp4" >
+                </video>
+            {% else %}
+                <img src={{ post.media }} alt="{{ post.title }}" class="mx-auto d-block mw-100">
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+  </div>
+{% endblock %}
