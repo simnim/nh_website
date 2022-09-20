@@ -25,9 +25,15 @@ EPS_DB_FILE_LOC = "~/imdb.db"
 tv_conn = sqlite3.connect(os.path.expanduser(EPS_DB_FILE_LOC), check_same_thread=False)
 tv_conn.row_factory = sqlite3.Row
 
+BOOKS_DB_FILE = "~/top-books.db"
+# We're just reading... so I think it's safe to share the connection on multiple threads
+books_conn = sqlite3.connect(os.path.expanduser(BOOKS_DB_FILE), check_same_thread=False)
+books_conn.row_factory = sqlite3.Row
+
 ALL_QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
 CAT_QS = ALL_QUERIES.topcat
 TV_QS = ALL_QUERIES.episodes
+BOOKS_QS = ALL_QUERIES.books
 
 # Got some great tips from https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-ii-templates
 
@@ -162,4 +168,16 @@ def permalink_top(media_hash, ts_ins=None):
     ]
     return render_template(
         "permalink.html", media_hash=media_hash, ts_ins=ts_ins, posts=posts
+    )
+
+
+@app.route("/books")
+@app.route("/books/<string:book_category>")
+def get_top_books(book_category="Books"):
+    title = "Top Books"
+    top_books = BOOKS_QS.get_top_books_for_category(books_conn, category=book_category)
+    return render_template(
+        "books.html",
+        top_books=top_books,
+        title=title,
     )

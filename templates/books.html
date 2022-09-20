@@ -1,0 +1,43 @@
+<!--
+     book_id integer primary key autoincrement
+    -- f'get_{col_name}'
+    , book_name text
+    , book_link text unique
+    , author_name text
+    , author_link text
+    , stars real
+    , num_reviews integer
+    , book_cover_img text
+    -- row_meta
+    , from_url text
+    , category text
+    , scrape_datetimez datetime
+);
+
+
+CREATE TABLE IF NOT EXISTS top_books (
+      top_book_id integer primary key autoincrement
+    , book_id integer unique
+    , bump_count integer
+    , first_top_timestampz datetime comment 'utc'
+    , latest_top_timestampz datetime comment 'utc'
+);
+
+ -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container bg-light rounded pt-3">
+    Top books scraped from Amazon every 30 minutes.
+</div>
+<hr>
+{% for book in top_books %}
+    <div class="container bg-light rounded pt-3">
+        <div class="col-md-11">Noticed @ {{ book.category }}</div>
+        <h3> {{ book.book_name }} </h3>
+    </div>
+    <hr>
+{% endfor %}
+
+{% endblock %}
