@@ -175,9 +175,13 @@ def permalink_top(media_hash, ts_ins=None):
 @app.route("/books/<string:book_category>")
 def get_top_books(book_category="Books"):
     title = "Top Books"
+    book_categories = [
+        c["category"] for c in BOOKS_QS.get_categories_for_top_books(books_conn)
+    ]
     top_books = BOOKS_QS.get_top_books_for_category(books_conn, category=book_category)
     return render_template(
         "books.html",
         top_books=top_books,
         title=title,
+        book_categories=book_categories,
     )

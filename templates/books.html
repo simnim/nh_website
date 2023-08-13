@@ -28,14 +28,42 @@ CREATE TABLE IF NOT EXISTS top_books (
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container bg-light rounded pt-3">
+<!-- <div class="container bg-light rounded pt-3">
     Top books scraped from Amazon every 30 minutes.
 </div>
+ -->
+
+<div class="container">
+    <div class="btn-group pt-3 justify-content-md-center">
+      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Select a Category of Books
+      </button>
+      <div class="dropdown-menu">
+        {% for category in book_categories %}
+        <a class="dropdown-item" href="/books/{{category}}">{{category}}</a>
+        {% endfor %}
+      </div>
+    </div>
+</div>
+
 <hr>
 {% for book in top_books %}
     <div class="container bg-light rounded pt-3">
-        <div class="col-md-11">Noticed @ {{ book.category }}</div>
-        <h3> {{ book.book_name }} </h3>
+        <div class="row">
+            <img src={{ book.book_cover_img }} class="col-md-4">
+            <div class="row col-md-8">
+                <div class="row">
+                    <div class="col">Most recently a top book @ {{ book.latest_top_timestampz }}</div>
+                </div>
+                                <div class="row">
+                <h3 class="col"> {{ book.book_name }} </h3>
+                <br>
+                </div>
+                <div class="row">
+                    <div class="col">By {{ book.author_name }}</div>
+                </div>
+            </div>
+        </div>
     </div>
     <hr>
 {% endfor %}

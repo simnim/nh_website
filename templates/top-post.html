@@ -9,9 +9,10 @@
     <div class="container bg-light rounded pt-3">
         <div class="row">
             <div class="col-md-11">Noticed @ {{ post.noticed_at }}</div>
-            <div class="btn btn-outline-secondary col-md-1">
-                <a href="/permalink/{{ post.media_hash }}/{{ post.noticed_at }}">Permalink</a>
-            </div>
+            <a  class="btn btn-outline-secondary col-md-1"
+                href="/permalink/{{ post.media_hash }}/{{ post.noticed_at }}"
+                > Permalink
+            </a>
         </div>
         <h3> {{ post.title }} </h3>
         {% if post.type == 'video' %}
