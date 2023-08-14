@@ -109,7 +109,6 @@ api.add_resource(Searcher, "/search")
     "/episodes/<string:imdb_show_id>/<int:max_rank_pct>", methods=["GET", "POST"]
 )
 def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
-    title = "Top Episodes"
     form = IMDbForm()
     if request.method == "POST":
         if form.imdb_show_id.data:
@@ -144,6 +143,11 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
     show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
     episodes = TV_QS.get_top_episodes_for_show(
         tv_conn, imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
+    )
+    title = (
+        (show_meta["primaryTitle"] + " 📺 " + imdb_show_id)
+        if imdb_show_id
+        else "📺 Top Episodes"
     )
     return render_template(
         "episodes.html",
