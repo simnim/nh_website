@@ -94,7 +94,7 @@ def get_search_results_given_search_str(search_str, return_just_id=False):
     ]
 
 
-# Called by the jqueryui autocomplete widget.
+# Called by the jqueryui autocomplete widget for top-episodes
 class Searcher(Resource):
     def get(self):
         return get_search_results_given_search_str(request.args["term"])

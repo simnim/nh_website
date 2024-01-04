@@ -11,7 +11,8 @@ SELECT
         || ' (tt'
         || b.tconst
         || ')'
-    ) as label,
+    )
+        as label,
     'tt'||b.tconst as value
 FROM
     show_names_fts(
