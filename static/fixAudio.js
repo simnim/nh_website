@@ -10,6 +10,7 @@ for (var vid of document.getElementsByTagName("video")) {
         const DASHplaylist = await fetch(vidSrc.replace(/DASH_\d+\.mp4/ , "DASHPlaylist.mpd"));
         const DASHPlaylistText = await DASHplaylist.text();
 
+        // why parse when you can just matchAll?
         const audio_q_regexp = /DASH_AUDIO_(.*?).mp4/g;
         const audio_qs = Array.from(DASHPlaylistText.matchAll(audio_q_regexp));
 
@@ -20,16 +21,19 @@ for (var vid of document.getElementsByTagName("video")) {
         const replaceWith = sound_qualities.length===0 ? 'audio' : "AUDIO_"+use_quality;
         // console.log(replaceWith);
         sound.src = vidSrc.replace(/DASH_\d+\.mp4/ , "DASH_"+replaceWith+".mp4");
-        vid.parentElement.appendChild(sound);
+        vid.appendChild(sound);
 
         // https://stackoverflow.com/questions/6433900/syncing-html5-video-with-audio-playback
         vid.onplay = function(){
-            sound.currentTime = vid.currentTime;
-            sound.play();
+            // sound.play()
+            this.lastChild.play();
+            // sound.currentTime = vid.currentTime;
+            this.lastChild.currentTime = this.currentTime;
         }
 
         vid.onpause = function(){
-            sound.pause();
+            // sound.pause();
+            this.lastChild.pause();
         }
 
     }
