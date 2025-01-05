@@ -90,7 +90,7 @@ def get_search_results_given_search_str(search_str, return_just_id=False):
     query_str = "* AND ".join(clean_txt(search_str).split()) + "*"
     return [
         r["value"] if return_just_id else r["label"]
-        for r in TV_QS.search_show_names_in_full_text_index(tv_conn, query_str)
+        for r in TV_QS.search_show_names_in_full_text_index(tv_conn, search_str=query_str)
     ]
 
 

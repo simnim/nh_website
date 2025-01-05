@@ -1,18 +1,18 @@
 -- name: get_top_episodes_for_show
 -- Fetches the top ranked episodes for a show in canonical order.
 SELECT
-    e.seasonNumber,
-    e.episodeNumber,
-    b.primaryTitle,
-    r.averageRating,
-    r.numVotes,
-    r.percent_rank
-FROM episode e
-    JOIN ratings r using (tconst)
-    JOIN basics b using (tconst)
-WHERE e.parentTconst = :imdb_show_id
-  AND r.percent_rank <= :max_rank_pct
+    episode.seasonNumber,
+    episode.episodeNumber,
+    basics.primaryTitle,
+    ratings.averageRating,
+    ratings.numVotes,
+    ratings.percent_rank
+FROM episode
+    JOIN ratings using (tconst)
+    JOIN basics using (tconst)
+WHERE episode.parentTconst = :imdb_show_id
+  AND ratings.percent_rank <= :max_rank_pct
 ORDER BY
-    e.seasonNumber,
-    e.episodeNumber
+    episode.seasonNumber,
+    episode.episodeNumber
 ;

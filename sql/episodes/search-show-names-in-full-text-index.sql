@@ -2,23 +2,21 @@
 -- Search against the show name full text index using the search string.
 -- label and value to satisfy https://api.jqueryui.com/autocomplete/#option-source
 SELECT
-    ( b.primaryTitle
+    ( basics.primaryTitle
         || ' ['
-        || b.startYear
+        || basics.startYear
         || '-'
-        || case when b.endYear is null then '?' else b.endYear end
+        || case when basics.endYear is null then '?' else basics.endYear end
         || ']'
         || ' (tt'
-        || b.tconst
+        || printf('%07d', basics.tconst)
         || ')'
     )
         as label,
-    'tt'||b.tconst as value
+    'tt'||printf('%07d', basics.tconst) as value
 FROM
-    show_names_fts(
-            :search_str
-        ) fts
-    join basics b on fts.rowid = b.rowid
+    show_names_fts(:search_str) fts
+    join basics on fts.rowid = basics.rowid
 order by totalvotes desc
 limit 15
 ;
