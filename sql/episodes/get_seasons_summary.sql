@@ -1,18 +1,16 @@
--- name: get_top_episodes_for_show
+-- name: get_seasons_summary
 -- Fetches the top ranked episodes for a show in canonical order.
 SELECT
     episode.seasonNumber,
     round(avg(ratings.averageRating),2) as average_rating,
     cast(avg(ratings.numVotes) as int) as average_num_votes,
-    cast(avg(100-ratings.percent_rank) as int) as average_percentile
+    cast(avg(ratings.percentile) as int) as average_percentile
 FROM episode
     JOIN ratings using (tconst)
     JOIN basics using (tconst)
--- WHERE episode.parentTconst = :imdb_show_id
--- WHERE episode.parentTconst = 285335   -- amazing race
-WHERE episode.parentTconst = 312172  -- monk
+-- WHERE episode.parentTconst = 312172  -- monk
+WHERE episode.parentTconst = :imdb_show_id
 group by episode.seasonNumber
 ORDER BY
---    average_percentile desc,
-    episode.seasonNumber    
+   average_percentile desc --, episode.seasonNumber
 ;

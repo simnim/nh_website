@@ -48,21 +48,24 @@ on ratings (
 
 
 -- Add percent_rank and index so we can get top episodes fast
-with percent_ranks as (
+with percentiles as (
     select
         ratings.tconst,
-        percent_rank() over (
-            partition by episode.parentTconst
-            order by ratings.averageRating desc,
-                     ratings.numVotes desc
-        ) as pct_rnk
+        cast(
+            round((
+                1-percent_rank() over (
+                partition by episode.parentTconst
+                order by ratings.averageRating desc,
+                         ratings.numVotes desc
+            ))*100) as int
+        ) as percentile
     from episode
     join ratings using (tconst)
 )
 update ratings
-set percent_rank = percent_ranks.pct_rnk * 100
-from percent_ranks
-where ratings.tconst = percent_ranks.tconst;
+set percentile = percentiles.percentile
+from percentiles
+where ratings.tconst = percentiles.tconst;
 
 
 -- Add number of ratings for shows so we can sort by it with the search box
@@ -89,10 +92,10 @@ on basics (
 -- create show names full text index
 drop table if exists show_names_fts;
 CREATE VIRTUAL TABLE show_names_fts
-USING fts5(primaryTitle, originalTitle, content='basics');
+USING fts5(primaryTitle, originalTitle, startYear, content='basics');
 -- populate index
-INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle)
-select rowid, "primaryTitle", "originalTitle"
+INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear)
+select rowid, "primaryTitle", "originalTitle", cast("startYear" as text)
 from basics
 where titleType in ('tvSeries', 'tvMiniSeries');
 

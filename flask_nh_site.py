@@ -64,7 +64,7 @@ def index():
 @app.route("/top/<string:label>")
 def show_subpath(label):
     title = f"Top {label}"
-    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label)
+    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label=label)
     # We need to know if the url is for a video or a picture!
     posts = [
         {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
@@ -141,6 +141,7 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             return redirect(url_for("only_powerful_episodes"))
     imdb_show_id_int = int(imdb_show_id.strip("t")) if imdb_show_id else imdb_show_id
     show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
+    seasons = TV_QS.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)
     episodes = TV_QS.get_top_episodes_for_show(
         tv_conn, imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
     )
@@ -155,6 +156,7 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         max_rank_pct=max_rank_pct,
         show_meta=show_meta,
         episodes=episodes,
+        seasons=seasons,
         form=form,
         title=title,
     )
@@ -164,7 +166,7 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
 @app.route("/permalink/<string:media_hash>", methods=["GET", "POST"])
 @app.route("/permalink/<string:media_hash>/<string:ts_ins>", methods=["GET", "POST"])
 def permalink_top(media_hash, ts_ins=None):
-    posts = CAT_QS.get_posts_for_hash(cat_conn, media_hash, ts_ins)
+    posts = CAT_QS.get_posts_for_hash(cat_conn, media_hash=media_hash, ts_ins=ts_ins)
     # We need to know if the url is for a video or a picture!
     posts = [
         {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}

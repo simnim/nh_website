@@ -6,12 +6,12 @@ SELECT
     basics.primaryTitle,
     ratings.averageRating,
     ratings.numVotes,
-    ratings.percent_rank
+    ratings.percentile
 FROM episode
     JOIN ratings using (tconst)
     JOIN basics using (tconst)
 WHERE episode.parentTconst = :imdb_show_id
-  AND ratings.percent_rank <= :max_rank_pct
+  AND ratings.percentile >= (100-:max_rank_pct)
 ORDER BY
     episode.seasonNumber,
     episode.episodeNumber

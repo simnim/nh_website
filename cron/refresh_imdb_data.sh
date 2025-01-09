@@ -12,10 +12,13 @@ pushd $(mktemp -d)
 # Create tables
 cat ${REPO_DIR}/sql/episodes/create-tables.sql | sqlite3 -echo ${DB_FILE_LOC}
 
-# Download the data
-wget https://datasets.imdbws.com/title.basics.tsv.gz
-wget https://datasets.imdbws.com/title.episode.tsv.gz
-wget https://datasets.imdbws.com/title.ratings.tsv.gz
+# # Download the data
+# wget https://datasets.imdbws.com/title.basics.tsv.gz
+# wget https://datasets.imdbws.com/title.episode.tsv.gz
+# wget https://datasets.imdbws.com/title.ratings.tsv.gz
+ln -n /Users/nh/Downloads/title.basics.tsv.gz
+ln -n /Users/nh/Downloads/title.episode.tsv.gz
+ln -n /Users/nh/Downloads/title.ratings.tsv.gz
 
 # Load data into tables
 python3 ${REPO_DIR}/cron/imdb_load.py ${DB_FILE_LOC}

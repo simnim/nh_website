@@ -1,5 +1,5 @@
 -- name: add_indexes_and_ranks#
--- clean up types from csvs-to-sql then add indexes and the percent_ranks column to ratings.
+-- DEPARECATED TODO REMOVED clean up types from csvs-to-sql then add indexes and the percent_ranks column to ratings.
 
 -- preemptively track ids we want to keep
 create table keep_tconst (tconst text);

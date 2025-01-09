@@ -4,6 +4,7 @@
 SELECT
     primaryTitle,
     startYear,
+    endYear,
     runtimeMinutes,
     genres
 FROM

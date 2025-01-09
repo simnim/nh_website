@@ -7,7 +7,17 @@
         <div class="form-row">
             <div class="form-group col-md-8">
               {{ form.imdb_show_id.label }} <br>
-              {{ form.imdb_show_id(size=32, value=(title if imdb_show_id else ''), class_="autocomplete", placeholder="type your search query here") }}
+              {{ form.imdb_show_id(size=32, value=(
+                (
+                    (show_meta.primaryTitle|string)
+                        +' ['+
+                    (show_meta.startYear|string)
+                        +'] = '+
+                    (imdb_show_id|string)
+                )
+                if imdb_show_id
+                else ''
+              ), class_="autocomplete", placeholder="type your search query here") }}
               {% for error in form.imdb_show_id.errors %}
               <span style="color: red;">[{{ error }}]</span>
               {% endfor %}
@@ -29,29 +39,36 @@
             });
         });
     </script>
-    <hr>
+    
   {% if imdb_show_id is not none %}
 
+    <hr>
+    <h2 id="show-meta">Show Metadata</h1>
+    <hr>
     <div>
         <table class="table table-sm table-bordered">
             <tr> <td> Show Name </td> <td> {{ show_meta.primaryTitle }} </td> </tr>
             <tr> <td> Start Year </td> <td> {{ show_meta.startYear }} </td> </tr>
+            <tr> <td> End Year </td> <td> {{ show_meta.endYear }} </td> </tr>
             <tr> <td> Typical Runtime </td> <td> {{ show_meta.runtimeMinutes }} min</td> </tr>
             <tr> <td> Genre tags </td> <td> {{ show_meta.genres }} </td> </tr>
         </table>
-        <hr>
     </div>
+
+    <hr>
+    <h2 id="episodes">Top Episodes</h1>
+    <hr>
     <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
-                {% if request.MOBILE %}
+                {% if g.is_mobile %}
                     <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
                     <th> S </th>
                     <th> Ep </th>
                     <th> Title </th>
                     <th> ⭐ </th>
                     <!-- <th> Num Votes </th> -->
-                    <th class="text-right"> <small><strong>Top Percentile</strong></small> </th>
+                    <th class="text-center"> <small><strong>Top Percentile</strong></small> </th>
                 {% else %}
                     <th> Index<sub><sub>1</sub></sub> </th>
                     <th> Season # </th>
@@ -59,21 +76,21 @@
                     <th> Title </th>
                     <th> Average Rating </th>
                     <th> Num Votes </th>
-                    <th class="text-right"> Top Percentile (100=best)</th>
+                    <th class="text-center"> Top Percentile (100=best)</th>
                 {% endif %}
             </tr>
         </thead>
         <tbody>
             {% for episode in episodes %}
                 <tr>
-                    {% if request.MOBILE %}
+                    {% if g.is_mobile %}
                         <!-- <td> {{ loop.index }}</td> -->
                         <td> {{ episode.seasonNumber }} </td>
                         <td> {{ episode.episodeNumber }} </td>
                         <td> {{ episode.primaryTitle }} </td>
                         <td> {{ episode.averageRating }} </td>
                         <!-- <td> {{ episode.numVotes }} </td> -->
-                        <td class="text-right"> {{ (100-episode.percent_rank)|round()|int }} </td>
+                        <td class="text-center"> {{ episode.percentile|int }} </td>
                     {% else %}
                         <td> {{ loop.index }}</td>
                         <td> {{ episode.seasonNumber }} </td>
@@ -81,14 +98,59 @@
                         <td> {{ episode.primaryTitle }} </td>
                         <td> {{ episode.averageRating }} </td>
                         <td> {{ episode.numVotes }} </td>
-                        <td class="text-right"> {{ (100-episode.percent_rank)|round()|int }} </td>
+                        <td class="text-center"> {{ episode.percentile|int }} </td>
                     {% endif %}
                 </tr>
             {% endfor %}
-    </tbody>
+        </tbody>
     </table>
 
+    <hr>
+    <h2 id="seasons">Top Seasons</h1>
+    <hr>
+    <table class="table table-hover table-sm table-striped table-bordered">
+        <thead>
+            <tr>
+                {% if g.is_mobile %}
+                    <th> Season </th>
+                    <th> Avg(⭐) </th>
+                    <th class="text-center"> <small><strong> Avg(Episode Percentile) </strong></small> </th>
+                {% else %}
+                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
+                    <th> Season # </th>
+                    <th> Avg # Votes </th>
+                    <th> Average Rating </th>
+                    <th class="text-center"> Avg Percentile (100=best)</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for season in seasons %}
+                <tr>
+                    {% if g.is_mobile %}
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                    {% else %}
+                        <!-- <td> {{ loop.index }}</td> -->
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_num_votes }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+
+
   {% else %}
+
+
+
 
     <div class="container px-5">
         <p> Hello and welcome to Top Episodes. </p>

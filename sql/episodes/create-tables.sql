@@ -25,6 +25,7 @@ CREATE TABLE "ratings" (
   "tconst" int,
   "averageRating" REAL,
   "numVotes" INTEGER,
-  "percent_rank" float -- added by me
+  -- "percent_rank" float -- added by me
+  "percentile" int -- added by me
 );
 
