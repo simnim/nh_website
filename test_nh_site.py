@@ -61,24 +61,33 @@ def test_top_cat(flask_app_server):
 
 
 def test_top_episodes_search_and_display_shows(flask_app_server):
-    # simulate loading the top episodes page
-    # type "trek voyager" into the search box
-    # select the first menu item (should be the right one)
-    # check it loaded the right stuff
-    # inspired by from https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode
+    """
+    simulate loading the top episodes page and searching for "trek, voyager"
+    inspired by from https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode
+    """
     options = selenium.webdriver.firefox.options.Options()
     options.add_argument("-headless")
     driver = selenium.webdriver.Firefox(executable_path="geckodriver", options=options)
     wait = selenium.webdriver.support.wait.WebDriverWait(driver, timeout=10)
     driver.get(f"http://127.0.0.1:{TESTING_PORT}/episodes")
-    wait.until(
-        expected.visibility_of_element_located((By.NAME, "imdb_show_id"))
-    ).send_keys("trek voyager")
-    wait.until(expected.visibility_of_element_located((By.ID, "ui-id-1"))).click()
-    wait.until(expected.visibility_of_element_located((By.NAME, "submit"))).click()
+    # wait until episode search is available, then do search 
+    ( wait.until(expected.visibility_of_element_located(
+        (By.NAME, "imdb_show_id"))).send_keys("trek voyager") )
+    # Click the first thing
+    ( wait.until(expected.visibility_of_element_located(
+        (By.ID, "ui-id-1"))).click() )
+    # Hit submit
+    ( wait.until(expected.visibility_of_element_located(
+        (By.NAME, "submit"))).click() )
     page_source = driver.page_source
     driver.quit()
     assert (
         "<td> Star Trek: Voyager </td>" in page_source
         and "<td> Eye of the Needle </td>" in page_source
     )
+
+
+
+
+
+
