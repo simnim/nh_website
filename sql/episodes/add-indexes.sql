@@ -1,5 +1,8 @@
 -- name: add_indexes#
--- Delete rows we don't need, add indexes, fill percent_ranks and countvotes columns, create full text index
+-- Delete rows we don't need
+-- Add indexes
+-- Fill percent_ranks and countvotes columns
+-- Create full text index
 
 -- Keep the tconst for series and mini series e.g. Friends = tt108778
 -- Also keep the all the episode tconst for the ^ series 

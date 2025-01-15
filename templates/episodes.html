@@ -7,26 +7,36 @@
         <div class="form-row">
             <div class="form-group col-md-8">
               {{ form.imdb_show_id.label }} <br>
-              {{ form.imdb_show_id(size=32, value=(
-                (
-                    (show_meta.primaryTitle|string)
-                        +' ['+
-                    (show_meta.startYear|string)
-                        +'-'+
-                    (show_meta.startYear|string)
-                        +'] = '+
-                    (imdb_show_id|string)
+              {{ form.imdb_show_id(
+                    size=32,
+                    class_="autocomplete",
+                    placeholder="type your search query here",
+                    value=(
+                        (
+                            (show_meta.primaryTitle|string)
+                                +' ['+
+                            (show_meta.startYear|string)
+                                +'-'+
+                            (show_meta.startYear|string)
+                                +'] = '+
+                            (imdb_show_id|string)
+                        )
+                        if imdb_show_id
+                        else ''
+                    ),
                 )
-                if imdb_show_id
-                else ''
-              ), class_="autocomplete", placeholder="type your search query here") }}
+              }}
               {% for error in form.imdb_show_id.errors %}
               <span style="color: red;">[{{ error }}]</span>
               {% endfor %}
             </div>
             <div class="form-group col-md-4">
               {{ form.max_rank_pct.label }} <br>
-              {{ form.max_rank_pct(size=32, value=(max_rank_pct or '')) }}
+              {{ form.max_rank_pct(
+                    size=32,
+                    value=(max_rank_pct or '')
+                 )
+              }}
               {% for error in form.max_rank_pct.errors %}
               <span style="color: red;">[{{ error }}]</span>
               {% endfor %}

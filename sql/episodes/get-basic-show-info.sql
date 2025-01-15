@@ -2,11 +2,11 @@
 -- Fetches basic metadata about the show.
 
 SELECT
-    primaryTitle,
-    startYear,
-    endYear,
-    runtimeMinutes,
-    genres
+    basics.primaryTitle,
+    basics.startYear,
+    basics.endYear,
+    basics.runtimeMinutes,
+    basics.genres
 FROM
     basics
 WHERE

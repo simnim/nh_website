@@ -12,5 +12,6 @@ FROM episode
 WHERE episode.parentTconst = :imdb_show_id
 group by episode.seasonNumber
 ORDER BY
-   average_percentile desc --, episode.seasonNumber
+   average_percentile desc
+--, episode.seasonNumber
 ;
