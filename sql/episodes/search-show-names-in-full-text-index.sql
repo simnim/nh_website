@@ -7,10 +7,8 @@ SELECT
         || basics.startYear
         || '-'
         || case when basics.endYear is null then '?' else basics.endYear end
-        || ']'
-        || ' (tt'
+        || '] = tt'
         || printf('%07d', basics.tconst)
-        || ')'
     )
         as label,
     'tt'||printf('%07d', basics.tconst) as value

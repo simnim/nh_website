@@ -81,7 +81,7 @@ class IMDbForm(FlaskForm):
 
 def clean_txt(txt):
     "lower case and remove special characters"
-    return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"\s+", " ", txt.strip().lower()))
+    return re.sub(r"[^a-z0-9 ]+", " ", re.sub(r"\s+", " ", txt.strip().lower())).strip()
 
 
 def get_search_results_given_search_str(search_str, return_just_id=False):
@@ -139,7 +139,7 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             )
         else:
             return redirect(url_for("only_powerful_episodes"))
-    imdb_show_id_int = int(imdb_show_id.strip("t")) if imdb_show_id else imdb_show_id
+    imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else imdb_show_id
     show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
     seasons = TV_QS.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)
     episodes = TV_QS.get_top_episodes_for_show(

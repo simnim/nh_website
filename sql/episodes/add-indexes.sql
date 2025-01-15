@@ -92,10 +92,10 @@ on basics (
 -- create show names full text index
 drop table if exists show_names_fts;
 CREATE VIRTUAL TABLE show_names_fts
-USING fts5(primaryTitle, originalTitle, startYear, content='basics');
+USING fts5(primaryTitle, originalTitle, startYear, endYear, content='basics');
 -- populate index
-INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear)
-select rowid, "primaryTitle", "originalTitle", cast("startYear" as text)
+INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear, endYear)
+select rowid, "primaryTitle", "originalTitle", cast("startYear" as text), cast("endYear" as text)
 from basics
 where titleType in ('tvSeries', 'tvMiniSeries');
 
