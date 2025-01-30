@@ -30,4 +30,3 @@ rm *.tsv.gz
 cat ${REPO_DIR}/sql/episodes/add-indexes.sql | sqlite3 -echo ${DB_FILE_LOC}
 
 popd
-

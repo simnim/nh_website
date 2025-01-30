@@ -70,24 +70,19 @@ def test_top_episodes_search_and_display_shows(flask_app_server):
     driver = selenium.webdriver.Firefox(executable_path="geckodriver", options=options)
     wait = selenium.webdriver.support.wait.WebDriverWait(driver, timeout=10)
     driver.get(f"http://127.0.0.1:{TESTING_PORT}/episodes")
-    # wait until episode search is available, then do search 
-    ( wait.until(expected.visibility_of_element_located(
-        (By.NAME, "imdb_show_id"))).send_keys("trek voyager") )
+    # wait until episode search is available, then do search
+    (
+        wait.until(
+            expected.visibility_of_element_located((By.NAME, "imdb_show_id"))
+        ).send_keys("trek voyager")
+    )
     # Click the first thing
-    ( wait.until(expected.visibility_of_element_located(
-        (By.ID, "ui-id-1"))).click() )
+    (wait.until(expected.visibility_of_element_located((By.ID, "ui-id-1"))).click())
     # Hit submit
-    ( wait.until(expected.visibility_of_element_located(
-        (By.NAME, "submit"))).click() )
+    (wait.until(expected.visibility_of_element_located((By.NAME, "submit"))).click())
     page_source = driver.page_source
     driver.quit()
     assert (
         "<td> Star Trek: Voyager </td>" in page_source
         and "<td> Eye of the Needle </td>" in page_source
     )
-
-
-
-
-
-

@@ -5,102 +5,100 @@
 -- Create full text index
 
 -- Keep the tconst for series and mini series e.g. Friends = tt108778
--- Also keep the all the episode tconst for the ^ series 
+-- Also keep the all the episode tconst for the ^ series
 CREATE TABLE keep_tconst (tconst text);
 
 INSERT INTO keep_tconst
-select tconst from basics 
-where titleType in ('tvSeries', 'tvMiniSeries');
+SELECT tconst FROM basics
+WHERE titletype IN ('tvSeries', 'tvMiniSeries');
 
 INSERT INTO keep_tconst
-select episode.tconst
-from episode
-join keep_tconst
-    on episode.parentTconst = keep_tconst.tconst
-;
+SELECT episode.tconst
+FROM episode
+INNER JOIN keep_tconst ON episode.parenttconst = keep_tconst.tconst;
 
-delete from basics where tconst not in (select * from keep_tconst);
-delete from episode where tconst not in (select * from keep_tconst);        
-delete from ratings where tconst not in (select * from keep_tconst);
-drop table keep_tconst;
+DELETE FROM basics
+WHERE tconst NOT IN (SELECT tconst FROM keep_tconst);
+
+DELETE FROM episode
+WHERE tconst NOT IN (SELECT tconst FROM keep_tconst);
+
+DELETE FROM ratings
+WHERE tconst NOT IN (SELECT tconst FROM keep_tconst);
+DROP TABLE keep_tconst;
 
 
 CREATE INDEX IF NOT EXISTS
 episode_tconst_idx
-on episode (
-        tconst
-    );
+ON episode (tconst);
 
 CREATE INDEX IF NOT EXISTS
-episode_parentTconst_idx
-on episode (
-        parentTconst
-    );
+episode_parent_tconst_idx
+ON episode (parenttconst);
 
 CREATE INDEX IF NOT EXISTS
 basics_tconst_idx
-on basics (
-        tconst
-    );
+ON basics (tconst);
 
 CREATE INDEX IF NOT EXISTS
 ratings_tconst_idx
-on ratings (
-        tconst
-    );
+ON ratings (tconst);
 
 
 -- Add percent_rank and index so we can get top episodes fast
-with percentiles as (
-    select
+WITH percentiles AS (
+    SELECT
         ratings.tconst,
         cast(
             round((
-                1-percent_rank() over (
-                partition by episode.parentTconst
-                order by ratings.averageRating desc,
-                         ratings.numVotes desc
-            ))*100) as int
-        ) as percentile
-    from episode
-    join ratings using (tconst)
+                1 - percent_rank() OVER (
+                    PARTITION BY episode.parenttconst
+                    ORDER BY
+                        ratings.averagerating DESC,
+                        ratings.numvotes DESC
+                )
+            ) * 100) AS int
+        ) AS percentile
+    FROM episode
+    INNER JOIN ratings ON episode.tconst = ratings.tconst
 )
-update ratings
-set percentile = percentiles.percentile
-from percentiles
-where ratings.tconst = percentiles.tconst;
+
+UPDATE ratings
+SET percentile = percentiles.percentile
+FROM percentiles
+WHERE ratings.tconst = percentiles.tconst;
 
 
--- Add number of ratings for shows so we can sort by it with the search box
-with countvotes as (
-    select
-        basics.tconst, sum(ratings.numVotes) as totalvotes
-    from episode
-    join ratings using (tconst)
-    join basics on episode.parentTconst = basics.tconst
-    group by episode.parentTconst
+-- Add number of ratings for shows so we can sort by it WITH the search box
+WITH countvotes AS (
+    SELECT
+        basics.tconst,
+        sum(ratings.numvotes) AS totalvotes
+    FROM episode
+    INNER JOIN ratings ON episode.tconst = ratings.tconst
+    INNER JOIN basics ON episode.parenttconst = basics.tconst
+    GROUP BY episode.parenttconst
 )
-update basics
-set totalvotes = countvotes.totalvotes
-from countvotes
-where basics.tconst = countvotes.tconst;
+
+UPDATE basics
+SET totalvotes = countvotes.totalvotes
+FROM countvotes
+WHERE basics.tconst = countvotes.tconst;
 
 CREATE INDEX IF NOT EXISTS
 basics_totalvotes_idx
-on basics (
-        totalvotes
-    );
+ON basics (totalvotes);
 
 
 -- create show names full text index
-drop table if exists show_names_fts;
+DROP TABLE IF EXISTS show_names_fts;
 CREATE VIRTUAL TABLE show_names_fts
-USING fts5(primaryTitle, originalTitle, startYear, endYear, content='basics');
+USING fts5(primarytitle, originaltitle, startyear, endyear, content='basics'); -- noqa
 -- populate index
 INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear, endYear)
-select rowid, "primaryTitle", "originalTitle", cast("startYear" as text), cast("endYear" as text)
-from basics
-where titleType in ('tvSeries', 'tvMiniSeries');
+SELECT rowid, "primaryTitle", "originalTitle", cast("startYear" AS text), cast("endYear" AS text)
+FROM basics
+WHERE titleType in ('tvSeries', 'tvMiniSeries');
 
 
 VACUUM;

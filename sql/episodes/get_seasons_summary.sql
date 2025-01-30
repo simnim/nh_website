@@ -1,17 +1,16 @@
 -- name: get_seasons_summary
 -- Fetches the top ranked episodes for a show in canonical order.
 SELECT
-    episode.seasonNumber,
-    round(avg(ratings.averageRating),2) as average_rating,
-    cast(avg(ratings.numVotes) as int) as average_num_votes,
-    cast(avg(ratings.percentile) as int) as average_percentile
+    episode.seasonnumber,
+    cast(avg(ratings.numvotes) AS int) AS average_num_votes,
+    cast(avg(ratings.percentile) AS int) AS average_percentile,
+    round(avg(ratings.averagerating), 2) AS average_rating
 FROM episode
-    JOIN ratings using (tconst)
-    JOIN basics using (tconst)
+INNER JOIN ratings ON episode.tconst = ratings.tconst
+INNER JOIN basics ON episode.tconst = basics.tconst
 -- WHERE episode.parentTconst = 312172  -- monk
-WHERE episode.parentTconst = :imdb_show_id
-group by episode.seasonNumber
+WHERE episode.parenttconst = :imdb_show_id
+GROUP BY episode.seasonnumber
 ORDER BY
-   average_percentile desc
+    average_percentile DESC;
 --, episode.seasonNumber
-;

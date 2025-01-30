@@ -18,4 +18,3 @@ dependencies = [
 
 [tool.pytest.ini_options]
 addopts = "-v"
-

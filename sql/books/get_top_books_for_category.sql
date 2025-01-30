@@ -32,13 +32,12 @@ select
     category,
     scrape_datetimez
 from
-    top_books tb
-    join books b using (book_id)
+    top_books
+inner join books on top_books.book_id = books.book_id
 where
     category = :category
 order by
     latest_top_timestampz desc
 limit
-    -- MAX_SHOW_TOP_BOOKS
-    10
-;
+-- MAX_SHOW_TOP_BOOKS
+    10;

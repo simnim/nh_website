@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.3.0
+    rev: v5.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -13,22 +13,28 @@ repos:
     -   id: check-toml
     -   id: check-yaml
     -   id: debug-statements
-    -   id: detect-aws-credentials
     -   id: detect-private-key
     -   id: end-of-file-fixer
     -   id: fix-byte-order-marker
     -   id: mixed-line-ending
     -   id: trailing-whitespace
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.6.4
+    rev: 5.13.2
     hooks:
     -   id: isort
         additional_dependencies: ["toml", "pyproject"]
 -   repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 24.10.0
     hooks:
     -   id: black
--   repo: https://gitlab.com/PyCQA/flake8
-    rev: 3.8.4
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
     hooks:
     - id: flake8
+- repo: https://github.com/sqlfluff/sqlfluff
+  rev: 3.3.0
+  hooks:
+    - id: sqlfluff-lint
+      args: [--dialect, sqlite]
+    - id: sqlfluff-fix
+      args: [--dialect, sqlite]
