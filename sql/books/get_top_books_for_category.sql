@@ -11,33 +11,33 @@
 -- author_link           | <null>
 -- stars                 | 4.7
 -- num_reviews           | 8232
--- book_cover_img        | https://images-na.ssl-images-amazon.com/images/I/91tQkOHvW9L._AC_UL900_SR900,600_.jpg
--- from_url              | https://www.amazon.com/Best-Sellers-Books-Literature-Fiction/zgbs/books/17/ref=zg_bs_nav_books_1
+-- book_cover_img        | https://images-na.ssl-images-amazon.com/images/I/91tQkOHvW9L._AC_UL900_SR900,600_.jpg              -- noqa
+-- from_url              | https://www.amazon.com/Best-Sellers-Books-Literature-Fiction/zgbs/books/17/ref=zg_bs_nav_books_1   -- noqa
 -- category              | Literature_Fiction
 -- scrape_datetimez      | 2022-10-01 23:50:03
 select
-    top_book_id,
-    book_id,
-    first_top_timestampz,
-    latest_top_timestampz,
-    bump_count,
-    book_name,
-    book_link,
-    author_name,
-    author_link,
-    stars,
-    num_reviews,
-    book_cover_img,
-    from_url,
-    category,
-    scrape_datetimez
+    top_books.top_book_id,
+    top_books.book_id,
+    top_books.first_top_timestampz,
+    top_books.latest_top_timestampz,
+    top_books.bump_count,
+    books.book_name,
+    books.book_link,
+    books.author_name,
+    books.author_link,
+    books.stars,
+    books.num_reviews,
+    books.book_cover_img,
+    books.from_url,
+    books.category,
+    books.scrape_datetimez
 from
     top_books
 inner join books on top_books.book_id = books.book_id
 where
-    category = :category
+    books.category = :category
 order by
-    latest_top_timestampz desc
+    top_books.latest_top_timestampz desc
 limit
 -- MAX_SHOW_TOP_BOOKS
     10;
