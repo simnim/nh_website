@@ -22,6 +22,7 @@ TESTING_PORT = 5555
 def flask_app_server():
     # Run the flask app
     flask_proc = sp.Popen(
+        # ["uv", "run", "flask", "run", "-p", str(TESTING_PORT)],
         ["flask", "run", "-p", str(TESTING_PORT)],
         stdout=sp.PIPE,
         stderr=sp.PIPE,
