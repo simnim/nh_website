@@ -2,12 +2,12 @@
 -- Fetches basic metadata about the show.
 
 SELECT
-    primaryTitle,
-    startYear,
-    runtimeMinutes,
-    genres
+    basics.primarytitle,
+    basics.startyear,
+    basics.endyear,
+    basics.runtimeminutes,
+    basics.genres
 FROM
     basics
 WHERE
-    tconst = :imdb_show_id
-;
+    basics.tconst = :imdb_show_id;

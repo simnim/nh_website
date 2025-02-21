@@ -1,2 +1,19 @@
+[project]
+name = "nh-website"
+version = "0.1.0"
+description = "NH website"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosql>=13.2",
+    "flask-mobility>=2.0.1",
+    "flask>=3.1.0",
+    "flask-wtf>=1.2.2",
+    "flask-restful>=0.3.10",
+    "pytest>=8.3.4",
+    "selenium>=4.28.1",
+    "sqlfluff>=3.3.1",
+    "requests>=2.32.3",
+]
 [tool.pytest.ini_options]
-addopts = "-v"
+addopts = "-vvv -rA"

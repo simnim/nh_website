@@ -1,19 +1,18 @@
 -- name: get_top_posts_for_flask
 -- Fetches the most recent 10 posts for a particular label
 select
-    p.url as media
-  , p.title
-  , p.ts_ins as noticed_at
-  , p.media_hash
+    post.url as media,
+    post.title,
+    post.ts_ins as noticed_at,
+    post.media_hash
 from
-  top_post tp
-    join
-  post p
-    using (post_id)
+    top_post
+inner join
+    post
+    on top_post.post_id = post.post_id
 where
-  tp.label = :label
+    top_post.label = :label
 order by
-  tp.ts_ins desc
+    top_post.ts_ins desc
 limit
-  10
-;
+    10;

@@ -9,22 +9,24 @@ DB_FILE_LOC="$HOME/imdb.db"
 # Hop into a temp directory
 pushd $(mktemp -d)
 
-# Download the data, unzip, and use better names...
-wget https://datasets.imdbws.com/title.basics.tsv.gz
-wget https://datasets.imdbws.com/title.episode.tsv.gz
-wget https://datasets.imdbws.com/title.ratings.tsv.gz
-gunzip *.gz
-mv title.basics.tsv basics.tsv
-mv title.episode.tsv episode.tsv
-mv title.ratings.tsv ratings.tsv
+# Create tables
+cat ${REPO_DIR}/sql/episodes/create-tables.sql | sqlite3 -echo ${DB_FILE_LOC}
 
-# Import the data into a sqlite db
-ls *.tsv | csvs-to-sqlite --replace-tables -s $'\t' *.tsv ${DB_FILE_LOC}
+# # Download the data
+# wget https://datasets.imdbws.com/title.basics.tsv.gz
+# wget https://datasets.imdbws.com/title.episode.tsv.gz
+# wget https://datasets.imdbws.com/title.ratings.tsv.gz
+ln -n /Users/nh/Downloads/title.basics.tsv.gz
+ln -n /Users/nh/Downloads/title.episode.tsv.gz
+ln -n /Users/nh/Downloads/title.ratings.tsv.gz
+
+# Load data into tables
+python3 ${REPO_DIR}/cron/imdb_load.py ${DB_FILE_LOC}
 
 # Remove temp files
-rm *.tsv
+rm *.tsv.gz
+
+# Add the indexes, computed columns, and delete junk rows
+cat ${REPO_DIR}/sql/episodes/add-indexes.sql | sqlite3 -echo ${DB_FILE_LOC}
 
 popd
-
-# Add the indexes and show ranks
-cat ${REPO_DIR}/sql/episodes/add-indexes-and-ranks.sql | sqlite3 -echo ${DB_FILE_LOC}
