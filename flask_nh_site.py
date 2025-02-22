@@ -122,7 +122,7 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
                 or [None]
             )[0]
             # OR they didn't choose an entry from the menu, maybe they feel lucky?
-            if clean_imdb_id is None and len(clean_imdb_id_input) > 3:
+            if clean_imdb_id is None and len(clean_imdb_id_input) >= 2:
                 # In case they eagerly hit enter without selecting a menu item then we
                 #  won't get an imdb id, but we'll have a reasonable search str so do
                 #  the search anyway and return the first result. I'm feeling lucky.
