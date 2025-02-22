@@ -68,6 +68,46 @@
     </div>
 
     <hr>
+    <h2 id="seasons">Top Seasons</h1>
+    <hr>
+    <table class="table table-hover table-sm table-striped table-bordered">
+        <thead>
+            <tr>
+                {% if g.is_mobile %}
+                    <th> Season </th>
+                    <th> Avg(⭐) </th>
+                    <th class="text-center"> <small><strong> Avg(Episode Percentile) </strong></small> </th>
+                {% else %}
+                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
+                    <th> Season # </th>
+                    <th> Avg # Votes </th>
+                    <th> Average Rating </th>
+                    <th class="text-center"> Avg Percentile (100=best)</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for season in seasons %}
+                <tr>
+                    {% if g.is_mobile %}
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                    {% else %}
+                        <!-- <td> {{ loop.index }}</td> -->
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_num_votes }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <hr>
     <h2 id="episodes">Top Episodes</h1>
     <hr>
     <table class="table table-hover table-sm table-striped table-bordered">
@@ -116,46 +156,6 @@
             {% endfor %}
         </tbody>
     </table>
-
-    <hr>
-    <h2 id="seasons">Top Seasons</h1>
-    <hr>
-    <table class="table table-hover table-sm table-striped table-bordered">
-        <thead>
-            <tr>
-                {% if g.is_mobile %}
-                    <th> Season </th>
-                    <th> Avg(⭐) </th>
-                    <th class="text-center"> <small><strong> Avg(Episode Percentile) </strong></small> </th>
-                {% else %}
-                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
-                    <th> Season # </th>
-                    <th> Avg # Votes </th>
-                    <th> Average Rating </th>
-                    <th class="text-center"> Avg Percentile (100=best)</th>
-                {% endif %}
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for season in seasons %}
-                <tr>
-                    {% if g.is_mobile %}
-                        <td> {{ season.seasonNumber }} </td>
-                        <td> {{ season.average_rating }} </td>
-                        <td class="text-center"> {{ season.average_percentile }} </td>
-                    {% else %}
-                        <!-- <td> {{ loop.index }}</td> -->
-                        <td> {{ season.seasonNumber }} </td>
-                        <td> {{ season.average_num_votes }} </td>
-                        <td> {{ season.average_rating }} </td>
-                        <td class="text-center"> {{ season.average_percentile }} </td>
-                    {% endif %}
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
 
 
 

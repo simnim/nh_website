@@ -117,8 +117,8 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
         if clean_imdb_id_input:
             # They succesfully used the search popup menu: extract out the imdb id
             clean_imdb_id = (
-                re.findall("tt[0-9]+", clean_imdb_id_input)
-                or re.findall(r"^\d+$", clean_imdb_id_input)
+                re.findall(r"tt[0-9]{5,8}", clean_imdb_id_input)
+                or re.findall(r"^\d{5,8}$", clean_imdb_id_input)
                 or [None]
             )[0]
             # OR they didn't choose an entry from the menu, maybe they feel lucky?
