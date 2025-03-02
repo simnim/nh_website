@@ -18,7 +18,18 @@ CREATE TABLE "basics" (
     "endYear" int,
     "runtimeMinutes" int,
     "genres" text,
-    "totalvotes" int  -- added by me
+    "totalvotes" int,  -- added by me
+    -- for /search via search_show_names_in_full_text_index
+    label text AS (
+        primarytitle
+        || ' ['
+        || startyear
+        || '-'
+        || coalesce(endyear, '?')
+        || '] = tt'
+        || printf('%07d', tconst)
+    ) VIRTUAL,
+    value text AS ('tt' || printf('%07d', tconst)) VIRTUAL
 );
 
 CREATE TABLE "ratings" (

@@ -94,6 +94,7 @@ ON basics (totalvotes);
 DROP TABLE IF EXISTS show_names_fts;
 CREATE VIRTUAL TABLE show_names_fts
 USING fts5(primarytitle, originaltitle, startyear, endyear, content='basics'); -- noqa
+
 -- populate index
 INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear, endYear)
 SELECT rowid, "primaryTitle", "originalTitle", cast("startYear" AS text), cast("endYear" AS text)

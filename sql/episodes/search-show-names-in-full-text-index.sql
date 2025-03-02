@@ -3,17 +3,8 @@
 -- label and value to satisfy
 -- https://api.jqueryui.com/autocomplete/#option-source
 SELECT
-    (
-        basics.primarytitle
-        || ' ['
-        || basics.startyear
-        || '-'
-        || coalesce(basics.endyear, '?')
-        || '] = tt'
-        || printf('%07d', basics.tconst)
-    )
-        AS label,
-    'tt' || printf('%07d', basics.tconst) AS value
+    basics.label,
+    basics.value
 FROM
     show_names_fts(:search_str) AS fts
 INNER JOIN basics ON fts.rowid = basics.rowid

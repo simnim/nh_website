@@ -6,7 +6,9 @@ SELECT
     basics.startyear,
     basics.endyear,
     basics.runtimeminutes,
-    basics.genres
+    basics.genres,
+    basics.label,
+    basics.value
 FROM
     basics
 WHERE
