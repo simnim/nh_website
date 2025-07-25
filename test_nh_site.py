@@ -30,24 +30,21 @@ def flask_app_server():
         cwd=os.path.dirname(os.path.abspath(__file__)),
     )
     time.sleep(1)
-    try:
-        flask_stderr_chatter_line = flask_proc.stderr.readline()
-        # Try to eat through any flask startup spam / errors
-        for i in range(10):
-            if (
-                flask_stderr_chatter_line.startswith(b" * Tip:")
-                or flask_stderr_chatter_line.startswith(b"#")
-                or flask_stderr_chatter_line.startswith(b"WARNING")
-            ):
-                flask_stderr_chatter_line = flask_proc.stderr.readline()
-        if b" * Running on http:" in flask_stderr_chatter_line:
-            yield flask_proc
-        else:
-            raise Exception(
-                flask_proc.stderr.readline().decode("utf-8").strip().split("\n")[-1]
-            )
-    except Exception:
-        raise
+    flask_stderr_chatter_line = flask_proc.stderr.readline()
+    # Try to eat through any flask startup spam / errors
+    for i in range(10):
+        if (
+            flask_stderr_chatter_line.startswith(b" * Tip:")
+            or flask_stderr_chatter_line.startswith(b"#")
+            or flask_stderr_chatter_line.startswith(b"WARNING")
+        ):
+            flask_stderr_chatter_line = flask_proc.stderr.readline()
+    if b" * Running on http:" in flask_stderr_chatter_line:
+        yield flask_proc
+    else:
+        raise Exception(
+            flask_proc.stderr.readline().decode("utf-8").strip().split("\n")[-1]
+        )
     flask_proc.kill()
 
 

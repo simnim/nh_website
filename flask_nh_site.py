@@ -110,7 +110,7 @@ api.add_resource(Searcher, "/search")
 @app.route(
     "/episodes/<string:imdb_show_id>/<int:max_rank_pct>", methods=["GET", "POST"]
 )
-def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
+def get_top_episodes_for_show(imdb_show_id=None, max_rank_pct=20):
     form = IMDbForm()
     if request.method == "POST":
         clean_imdb_id_input = clean_txt(form.imdb_show_id.data)
@@ -135,13 +135,13 @@ def only_powerful_episodes(imdb_show_id=None, max_rank_pct=20):
             # At this point either we get an imdb show id or we got None
             return redirect(
                 url_for(
-                    "only_powerful_episodes",
+                    "get_top_episodes_for_show",
                     imdb_show_id=clean_imdb_id or None,
                     max_rank_pct=form.max_rank_pct.data or None,
                 )
             )
         else:
-            return redirect(url_for("only_powerful_episodes"))
+            return redirect(url_for("get_top_episodes_for_show"))
     imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
     show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
     seasons = TV_QS.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)

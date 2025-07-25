@@ -18,7 +18,7 @@ CREATE TABLE "basics" (
     "endYear" int,
     "runtimeMinutes" int,
     "genres" text,
-    "totalvotes" int,  -- added by me
+    "totalvotes" int,  -- added by me and filled in add-indexes.sql
     -- for /search via search_show_names_in_full_text_index
     label text AS (
         primarytitle
@@ -36,6 +36,5 @@ CREATE TABLE "ratings" (
     "tconst" int,
     "averageRating" real,
     "numVotes" integer,
-    -- "percent_rank" float -- added by me
-    "percentile" int -- added by me
+    "percentile" int -- added by me and filled in add-indexes.sql
 );
