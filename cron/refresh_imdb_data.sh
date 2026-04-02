@@ -9,24 +9,28 @@ DB_FILE_PATH="$HOME/imdb.db"
 # Hop into a temp directory
 pushd $(mktemp -d)
 
+TEMP_DB_PATH="./imdb.db"
+
 # Create tables
-cat ${REPO_DIR}/sql/episodes/create-tables.sql | sqlite3 -echo ${DB_FILE_PATH}
+cat ${REPO_DIR}/sql/episodes/create-tables.sql | sqlite3 -echo ${TEMP_DB_PATH}
 
 # # Download the data
-# wget https://datasets.imdbws.com/title.basics.tsv.gz
-# wget https://datasets.imdbws.com/title.episode.tsv.gz
-# wget https://datasets.imdbws.com/title.ratings.tsv.gz
-ln -n /Users/nh/Downloads/title.basics.tsv.gz
-ln -n /Users/nh/Downloads/title.episode.tsv.gz
-ln -n /Users/nh/Downloads/title.ratings.tsv.gz
+wget https://datasets.imdbws.com/title.basics.tsv.gz
+wget https://datasets.imdbws.com/title.episode.tsv.gz
+wget https://datasets.imdbws.com/title.ratings.tsv.gz
+# ln -n /Users/nh/Downloads/title.basics.tsv.gz
+# ln -n /Users/nh/Downloads/title.episode.tsv.gz
+# ln -n /Users/nh/Downloads/title.ratings.tsv.gz
 
 # Load data into tables
-python3 ${REPO_DIR}/cron/imdb_load.py ${DB_FILE_PATH}
+python3 ${REPO_DIR}/cron/imdb_load.py ${TEMP_DB_PATH}
 
 # Remove temp files
 rm *.tsv.gz
 
 # Add the indexes, computed columns, and delete junk rows
-cat ${REPO_DIR}/sql/episodes/add-indexes.sql | sqlite3 -echo ${DB_FILE_PATH}
+cat ${REPO_DIR}/sql/episodes/add-indexes.sql | sqlite3 -echo ${TEMP_DB_PATH}
+
+mv ${TEMP_DB_PATH} ${DB_FILE_PATH}
 
 popd

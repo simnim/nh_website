@@ -4,6 +4,7 @@ import re
 import sqlite3
 import sys
 
+# https://nackjicholson.github.io/aiosql/pydoc/aiosql.html
 import aiosql
 from flask import Flask, redirect, render_template, request, url_for
 from flask_mobility import Mobility
@@ -13,27 +14,24 @@ from wtforms import IntegerField, StringField, SubmitField
 
 THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-CATS_DB_FILE_LOC = "~/.top_cat/db"
-# We're just reading... so I think it's safe to share the connection on multiple threads
-cat_conn = sqlite3.connect(
-    os.path.expanduser(CATS_DB_FILE_LOC), check_same_thread=False
-)
-cat_conn.row_factory = sqlite3.Row
+QS = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3", kwargs_only=True)
 
-EPS_DB_FILE_LOC = "~/imdb.db"
-# We're just reading... so I think it's safe to share the connection on multiple threads
-tv_conn = sqlite3.connect(os.path.expanduser(EPS_DB_FILE_LOC), check_same_thread=False)
-tv_conn.row_factory = sqlite3.Row
 
-BOOKS_DB_FILE = "~/top-books.db"
-# We're just reading... so I think it's safe to share the connection on multiple threads
-books_conn = sqlite3.connect(os.path.expanduser(BOOKS_DB_FILE), check_same_thread=False)
-books_conn.row_factory = sqlite3.Row
+def get_sqlite_conn(file_name):
+    try:
+        # We're just reading... so I think it's safe to share the connection on multiple threads
+        conn = sqlite3.connect(os.path.expanduser(file_name), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except sqlite3.Error as e:
+        print(f"Error connecting to database: {e}")
+        return None
 
-ALL_QUERIES = aiosql.from_path(THIS_SCRIPT_DIR + "/sql", "sqlite3")
-CAT_QS = ALL_QUERIES.topcat
-TV_QS = ALL_QUERIES.episodes
-BOOKS_QS = ALL_QUERIES.books
+
+cat_conn = get_sqlite_conn("~/.top_cat/db")
+tv_conn = get_sqlite_conn("~/imdb.db")
+books_conn = get_sqlite_conn("~/top-books.db")
+
 
 # Got some great tips from https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-ii-templates
 
@@ -64,7 +62,7 @@ def index():
 @app.route("/top/<string:label>")
 def show_subpath(label):
     title = f"Top {label}"
-    posts = CAT_QS.get_top_posts_for_flask(cat_conn, label=label)
+    posts = QS.topcat.get_top_posts_for_flask(cat_conn, label=label)
     # We need to know if the url is for a video or a picture!
     posts = [
         {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
@@ -80,7 +78,7 @@ class IMDbForm(FlaskForm):
 
 
 def clean_txt(txt):
-    "lower case and remove special characters"
+    "Idempotent: remove special characters, lower case, minimize whitespace"
     return re.sub(r"[^a-z0-9 ]+", " ", re.sub(r"\s+", " ", txt.strip().lower())).strip()
 
 
@@ -90,7 +88,7 @@ def get_search_results_given_search_str(search_str, return_just_id=False):
     query_str = "* AND ".join(clean_txt(search_str).split()) + "*"
     return [
         r["value"] if return_just_id else r["label"]
-        for r in TV_QS.search_show_names_in_full_text_index(
+        for r in QS.episodes.search_show_names_in_full_text_index(
             tv_conn, search_str=query_str
         )
     ]
@@ -99,7 +97,9 @@ def get_search_results_given_search_str(search_str, return_just_id=False):
 # Called by the jqueryui autocomplete widget for top-episodes
 class Searcher(Resource):
     def get(self):
-        return get_search_results_given_search_str(request.args["term"])
+        return get_search_results_given_search_str(
+            search_str=clean_txt(request.args["term"])
+        )
 
 
 api.add_resource(Searcher, "/search")
@@ -121,31 +121,29 @@ def get_top_episodes_for_show(imdb_show_id=None, max_rank_pct=20):
                 or re.findall(r"^\d{5,8}$", clean_imdb_id_input)
                 or [None]
             )[0]
-            # OR they didn't choose an entry from the menu, maybe they feel lucky?
+            # OR They were extra lazy and hit enter before the search had a chance to respond.
             if clean_imdb_id is None and len(clean_imdb_id_input) >= 2:
-                # In case they eagerly hit enter without selecting a menu item then we
-                #  won't get an imdb id, but we'll have a reasonable search str so do
-                #  the search anyway and return the first result. I'm feeling lucky.
+                # Example input: "sponge" -> 0206512
                 clean_imdb_id = (
                     get_search_results_given_search_str(
                         clean_imdb_id_input, return_just_id=True
                     )
                     or [None]
                 )[0]
-            # At this point either we get an imdb show id or we got None
+            # If we got nothing just redirect to episodes index page
             return redirect(
                 url_for(
                     "get_top_episodes_for_show",
                     imdb_show_id=clean_imdb_id or None,
-                    max_rank_pct=form.max_rank_pct.data or None,
+                    max_rank_pct=int(form.max_rank_pct.data) or None,
                 )
             )
         else:
             return redirect(url_for("get_top_episodes_for_show"))
     imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
-    show_meta = TV_QS.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
-    seasons = TV_QS.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)
-    episodes = TV_QS.get_top_episodes_for_show(
+    show_meta = QS.episodes.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
+    seasons = QS.episodes.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)
+    episodes = QS.episodes.get_top_episodes_for_show(
         tv_conn, imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
     )
     title = (
@@ -169,7 +167,7 @@ def get_top_episodes_for_show(imdb_show_id=None, max_rank_pct=20):
 @app.route("/permalink/<string:media_hash>", methods=["GET", "POST"])
 @app.route("/permalink/<string:media_hash>/<string:ts_ins>", methods=["GET", "POST"])
 def permalink_top(media_hash, ts_ins=None):
-    posts = CAT_QS.get_posts_for_hash(cat_conn, media_hash=media_hash, ts_ins=ts_ins)
+    posts = QS.topcat.get_posts_for_hash(cat_conn, media_hash=media_hash, ts_ins=ts_ins)
     # We need to know if the url is for a video or a picture!
     posts = [
         {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
@@ -185,9 +183,9 @@ def permalink_top(media_hash, ts_ins=None):
 def get_top_books(book_category="Books"):
     title = "Top Books"
     book_categories = [
-        c["category"] for c in BOOKS_QS.get_categories_for_top_books(books_conn)
+        c["category"] for c in QS.books.get_categories_for_top_books(books_conn)
     ]
-    top_books = BOOKS_QS.get_top_books_for_category(books_conn, category=book_category)
+    top_books = QS.books.get_top_books_for_category(books_conn, category=book_category)
     return render_template(
         "books.html",
         top_books=top_books,

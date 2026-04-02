@@ -1,4 +1,4 @@
--- name: get_seasons_summary
+-- name: get_seasons_summary(imdb_show_id)
 -- Fetches the top ranked episodes for a show in canonical order.
 SELECT
     episode.seasonnumber,

@@ -1,4 +1,4 @@
--- name: get_basic_show_info^
+-- name: get_basic_show_info(imdb_show_id)^
 -- Fetches basic metadata about the show.
 
 SELECT

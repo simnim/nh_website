@@ -1,4 +1,4 @@
--- name: get_posts_for_hash
+-- name: get_posts_for_hash(media_hash, ts_ins)
 -- Fetches posts for a given media file media_hash. Optionally with a timestamp.
 select
     post.url as media,

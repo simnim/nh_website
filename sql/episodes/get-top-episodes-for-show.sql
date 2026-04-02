@@ -1,4 +1,4 @@
--- name: get_top_episodes_for_show
+-- name: get_top_episodes_for_show(imdb_show_id, max_rank_pct)
 -- Fetches the top ranked episodes for a show in canonical order.
 SELECT
     episode.seasonnumber,

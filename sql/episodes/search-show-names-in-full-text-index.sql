@@ -1,4 +1,4 @@
--- name: search_show_names_in_full_text_index
+-- name: search_show_names_in_full_text_index(search_str)
 -- Search against the show name full text index using the search string.
 -- label and value to satisfy
 -- https://api.jqueryui.com/autocomplete/#option-source
