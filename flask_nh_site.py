@@ -79,7 +79,8 @@ class IMDbForm(FlaskForm):
 
 def clean_txt(txt):
     "Idempotent: remove special characters, lower case, minimize whitespace"
-    return re.sub(r"[^a-z0-9 ]+", " ", re.sub(r"\s+", " ", txt.strip().lower())).strip()
+    no_specials = re.sub(r"[^a-z0-9 ]+", " ", txt.strip().lower())
+    return re.sub(r"\s+", " ", no_specials).strip()
 
 
 def get_search_results_given_search_str(search_str, return_just_id=False):
