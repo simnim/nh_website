@@ -11,8 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from flask_nh_site import QS, cat_conn, clean_txt, tv_conn
-
 # from selenium.webdriver.common.keys import Keys
 
 LOCALHOST = "127.0.0.1"
@@ -20,7 +18,8 @@ TESTING_PORT = 5555
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# sys.path.insert(0, PROJECT_ROOT)
+sys.path.insert(0, PROJECT_ROOT)
+from flask_nh_site import QS, cat_conn, clean_txt, tv_conn  # noqa
 
 
 # FIXME: Import from app instead of running this on the cli
