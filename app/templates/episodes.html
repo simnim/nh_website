@@ -3,34 +3,17 @@
 {% block content %}
   <div class="container bg-light rounded pt-3">
     <form action="" method="post" novalidate>
-        {{ form.hidden_tag() }}
         <div class="form-row">
             <div class="form-group col-md-8">
-              {{ form.imdb_show_id.label }} <br>
-              {{ form.imdb_show_id(
-                    size=32,
-                    class_="autocomplete",
-                    placeholder="type your search query here",
-                    value=(show_meta.label if imdb_show_id else '')
-                )
-              }}
-              {% for error in form.imdb_show_id.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
+              <label for="imdb_show_id">Show Name Search (or IMDb show ID)</label> <br>
+              <input type="text" name="imdb_show_id" id="imdb_show_id" size="32" class="autocomplete" placeholder="type your search query here" value="{{ show_meta.label if imdb_show_id else '' }}">
             </div>
             <div class="form-group col-md-4">
-              {{ form.max_rank_pct.label }} <br>
-              {{ form.max_rank_pct(
-                    size=32,
-                    value=(max_rank_pct or '')
-                 )
-              }}
-              {% for error in form.max_rank_pct.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
+              <label for="max_rank_pct">Show top __% percent (below)</label> <br>
+              <input type="number" name="max_rank_pct" id="max_rank_pct" size="32" value="{{ max_rank_pct or '' }}">
             </div>
         </div>
-        {{ form.submit(class_="btn btn-primary form-group") }}
+        <input type="submit" name="submit" class="btn btn-primary form-group" value="Show the best episodes">
     </form>
     <script>
         $( document ).ready(function() {
@@ -61,7 +44,7 @@
     <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
-                {% if g.is_mobile %}
+                {% if request.state.is_mobile %}
                     <th> Season </th>
                     <th> Avg(⭐) </th>
                     <th class="text-center"> <small><strong> Avg(Episode Percentile) </strong></small> </th>
@@ -78,7 +61,7 @@
         <tbody>
             {% for season in seasons %}
                 <tr>
-                    {% if g.is_mobile %}
+                    {% if request.state.is_mobile %}
                         <td> {{ season.seasonNumber }} </td>
                         <td> {{ season.average_rating }} </td>
                         <td class="text-center"> {{ season.average_percentile }} </td>
@@ -101,7 +84,7 @@
     <table class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
-                {% if g.is_mobile %}
+                {% if request.state.is_mobile %}
                     <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
                     <th> S </th>
                     <th> Ep </th>
@@ -123,7 +106,7 @@
         <tbody>
             {% for episode in episodes %}
                 <tr>
-                    {% if g.is_mobile %}
+                    {% if request.state.is_mobile %}
                         <!-- <td> {{ loop.index }}</td> -->
                         <td> {{ episode.seasonNumber }} </td>
                         <td> {{ episode.episodeNumber }} </td>
