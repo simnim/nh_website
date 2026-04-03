@@ -5,15 +5,15 @@ description = "NH website"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aiosql>=13.2",
+    "aiosql>=15.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
-    "python-multipart>=0.0.20",
-    "jinja2>=3.1.0",
-    "pytest>=8.3.4",
-    "selenium>=4.28.1",
-    "sqlfluff>=3.3.1",
-    "requests>=2.32.3",
+    "python-multipart>=0.0.22",
+    "jinja2>=3.1.6",
+    "pytest>=9.0.2",
+    "selenium>=4.41.0",
+    "sqlfluff>=4.1.0",
+    "requests>=2.33.1",
 ]
 [tool.pytest.ini_options]
 addopts = "-vvv -rA"

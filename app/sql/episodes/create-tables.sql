@@ -1,4 +1,4 @@
--- name: create_tables#
+-- name: create_tables()#
 -- creates tables ready to load in data
 
 CREATE TABLE "episode" (

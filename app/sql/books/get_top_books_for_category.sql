@@ -1,4 +1,4 @@
--- name: get_top_books_for_category
+-- name: get_top_books_for_category(category)
 -- Query for pulling in top_books for a category
 -- top_book_id           | 21301
 -- book_id               | 659313

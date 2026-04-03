@@ -1,4 +1,4 @@
--- name: add_indexes#
+-- name: add_indexes()#
 -- Delete rows we don't need
 -- Add indexes
 -- Fill percent_ranks and countvotes columns
