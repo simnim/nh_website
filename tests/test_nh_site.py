@@ -10,10 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-# from selenium.webdriver.common.keys import Keys
-
-LOCALHOST = "127.0.0.1"
 TESTING_PORT = 5555
+LOCAL_ADDRESS = f"127.0.0.1:{TESTING_PORT}"
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -62,13 +60,13 @@ def test_runs_at_all(app_server):
 
 
 def test_index(app_server):
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}")
+    req = requests.get(f"http://{LOCAL_ADDRESS}")
     # Make sure the index page loads and that it advertises my github
     assert req.ok and "https://github.com/simnim/top-cat" in req.text
 
 
 def test_top_cat(app_server):
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}/top/cat")
+    req = requests.get(f"http://{LOCAL_ADDRESS}/top/cat")
     # Load top/cat and check that we got some cats
     assert req.ok and len(re.findall("<hr>", req.text)) > 2
 
@@ -108,28 +106,28 @@ def test_clean_txt():
 
 def test_episodes_direct_show(app_server):
     # Star Trek: Voyager tt0112178
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}/episodes/tt0112178")
+    req = requests.get(f"http://{LOCAL_ADDRESS}/episodes/tt0112178")
     assert req.ok and "Star Trek: Voyager" in req.text
 
 
 def test_favicon(app_server):
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}/favicon.ico")
+    req = requests.get(f"http://{LOCAL_ADDRESS}/favicon.ico")
     assert req.ok and req.headers["Content-Type"].startswith("image/")
 
 
 def test_episodes_index(app_server):
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}/episodes")
+    req = requests.get(f"http://{LOCAL_ADDRESS}/episodes")
     assert req.ok and "Show Name Search" in req.text
 
 
 def test_books(app_server):
-    req = requests.get(f"http://{LOCALHOST}:{TESTING_PORT}/books")
+    req = requests.get(f"http://{LOCAL_ADDRESS}/books")
     assert req.ok and "Books" in req.text
 
 
 def test_search_returns_results(app_server):
     req = requests.get(
-        f"http://{LOCALHOST}:{TESTING_PORT}/search", params={"term": "trek voyager"}
+        f"http://{LOCAL_ADDRESS}/search", params={"term": "trek voyager"}
     )
     assert req.ok and any("Voyager" in r for r in req.json())
 
@@ -146,7 +144,7 @@ def test_top_episodes_search_and_display_shows(app_server):
     # Wait until an element is visible on the page
     wait = WebDriverWait(driver, timeout=20)
 
-    driver.get(f"http://{LOCALHOST}:{TESTING_PORT}/episodes")
+    driver.get(f"http://{LOCAL_ADDRESS}/episodes")
     # wait until episode search is available, then do search
     (
         wait.until(
