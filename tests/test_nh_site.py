@@ -1,10 +1,8 @@
 import os
 import re
-import sqlite3
 import subprocess as sp
 import sys
 
-import aiosqlite
 import pytest
 import requests
 from selenium import webdriver
@@ -20,7 +18,7 @@ TESTING_PORT = 5555
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, PROJECT_ROOT)
-from app.main import QS, clean_txt  # noqa
+from app.main import QS, clean_txt, open_db  # noqa
 
 
 @pytest.fixture
@@ -44,22 +42,17 @@ def app_server():
 
 
 @pytest.fixture
-def anyio_backend():
-    return "asyncio"
-
-
-@pytest.fixture
 async def cat_conn():
-    async with aiosqlite.connect(os.path.expanduser("~/.top_cat/db")) as conn:
-        conn.row_factory = sqlite3.Row
-        yield conn
+    conn = await open_db("~/.top_cat/db")
+    yield conn
+    await conn.close()
 
 
 @pytest.fixture
 async def tv_conn():
-    async with aiosqlite.connect(os.path.expanduser("~/imdb.db")) as conn:
-        conn.row_factory = sqlite3.Row
-        yield conn
+    conn = await open_db("~/imdb.db")
+    yield conn
+    await conn.close()
 
 
 def test_runs_at_all(app_server):
@@ -80,7 +73,6 @@ def test_top_cat(app_server):
     assert req.ok and len(re.findall("<hr>", req.text)) > 2
 
 
-@pytest.mark.anyio
 async def test_get_posts_for_hash(cat_conn):
     media_hash = "d205ee2bdc30ba281bd2e696cd18a6e26b2bc697"
     posts = [
@@ -93,7 +85,6 @@ async def test_get_posts_for_hash(cat_conn):
     assert all(p["media_hash"] == media_hash for p in posts)
 
 
-@pytest.mark.anyio
 async def test_episodes_db_queries(tv_conn):
     # Star Trek: Voyager tt0112178
     voyager_id = 112178
@@ -145,7 +136,7 @@ def test_search_returns_results(app_server):
 
 def test_top_episodes_search_and_display_shows(app_server):
     """
-    simulate loading the top episodes page and searching for "trek, voyager"
+    simulate loading the top episodes page and searching for "trek voyager"
     inspired by from https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode
     """
     options = webdriver.FirefoxOptions()
