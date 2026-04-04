@@ -1,8 +1,10 @@
 import os
 import re
+import sqlite3
 import subprocess as sp
 import sys
 
+import aiosqlite
 import pytest
 import requests
 from selenium import webdriver
@@ -18,7 +20,7 @@ TESTING_PORT = 5555
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, PROJECT_ROOT)
-from app.main import QS, cat_conn, clean_txt, tv_conn  # noqa
+from app.main import QS, clean_txt  # noqa
 
 
 @pytest.fixture
@@ -41,6 +43,25 @@ def app_server():
     raise Exception("uvicorn did not start: " + proc.stderr.read().decode("utf-8"))
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
+@pytest.fixture
+async def cat_conn():
+    async with aiosqlite.connect(os.path.expanduser("~/.top_cat/db")) as conn:
+        conn.row_factory = sqlite3.Row
+        yield conn
+
+
+@pytest.fixture
+async def tv_conn():
+    async with aiosqlite.connect(os.path.expanduser("~/imdb.db")) as conn:
+        conn.row_factory = sqlite3.Row
+        yield conn
+
+
 def test_runs_at_all(app_server):
     if app_server.poll() is not None:
         print(app_server.stderr.read().decode("utf-8"), file=sys.stderr)
@@ -59,25 +80,31 @@ def test_top_cat(app_server):
     assert req.ok and len(re.findall("<hr>", req.text)) > 2
 
 
-def test_get_posts_for_hash():
+@pytest.mark.anyio
+async def test_get_posts_for_hash(cat_conn):
     media_hash = "d205ee2bdc30ba281bd2e696cd18a6e26b2bc697"
-    posts = list(
-        QS.topcat.get_posts_for_hash(cat_conn, media_hash=media_hash, ts_ins=None)
-    )
+    posts = [
+        row
+        async for row in QS.topcat.get_posts_for_hash(
+            cat_conn, media_hash=media_hash, ts_ins=None
+        )
+    ]
     assert len(posts) > 0
     assert all(p["media_hash"] == media_hash for p in posts)
 
 
-def test_episodes_db_queries():
+@pytest.mark.anyio
+async def test_episodes_db_queries(tv_conn):
     # Star Trek: Voyager tt0112178
     voyager_id = 112178
-    show = QS.episodes.get_basic_show_info(tv_conn, imdb_show_id=voyager_id)
+    show = await QS.episodes.get_basic_show_info(tv_conn, imdb_show_id=voyager_id)
     assert show["primaryTitle"] == "Star Trek: Voyager"
-    episodes = list(
-        QS.episodes.get_top_episodes_for_show(
+    episodes = [
+        row
+        async for row in QS.episodes.get_top_episodes_for_show(
             tv_conn, imdb_show_id=voyager_id, max_rank_pct=20
         )
-    )
+    ]
     assert len(episodes) > 0
     assert all(ep["percentile"] >= 80 for ep in episodes)
 

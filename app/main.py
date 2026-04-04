@@ -1,11 +1,14 @@
+import asyncio
 import mimetypes
 import os
 import re
 import sqlite3
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 # https://nackjicholson.github.io/aiosql/pydoc/aiosql.html
 import aiosql
+import aiosqlite
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,25 +17,30 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 THIS_DIR = Path(__file__).parent
 
-QS = aiosql.from_path(THIS_DIR / "sql", "sqlite3", kwargs_only=True)
+QS = aiosql.from_path(THIS_DIR / "sql", "aiosqlite", kwargs_only=True)
+
+db = {}
 
 
-def get_sqlite_conn(file_name):
-    try:
-        # We're just reading... so I think it's safe to share the connection on multiple threads
-        conn = sqlite3.connect(os.path.expanduser(file_name), check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
-    except sqlite3.Error as e:
-        print(f"Error connecting to database: {e}")
-        return None
+async def open_db(file_name):
+    conn = await aiosqlite.connect(os.path.expanduser(file_name))
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-cat_conn = get_sqlite_conn("~/.top_cat/db")
-tv_conn = get_sqlite_conn("~/imdb.db")
-books_conn = get_sqlite_conn("~/top-books.db")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db["cat"], db["tv"], db["books"] = await asyncio.gather(
+        open_db("~/.top_cat/db"),
+        open_db("~/imdb.db"),
+        open_db("~/top-books.db"),
+    )
+    yield
+    for conn in db.values():
+        await conn.close()
 
-app = FastAPI()
+
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=THIS_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=THIS_DIR / "templates")
 
@@ -62,17 +70,20 @@ def index(request: Request):
 
 # Just fetch the most recent 10 top posts
 @app.get("/top/{label}")
-def show_subpath(request: Request, label: str):
+async def show_subpath(request: Request, label: str):
     title = f"Top {label}"
-    posts = QS.topcat.get_top_posts_for_flask(cat_conn, label=label)
     # We need to know if the url is for a video or a picture!
     posts = [
-        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
-        for post in posts
+        {**dict(row), "type": _media_type(row["media"])}
+        async for row in QS.topcat.get_top_posts_for_flask(db["cat"], label=label)
     ]
     return templates.TemplateResponse(
         request, "top-post.html", {"title": title, "posts": posts, "label": label}
     )
+
+
+def _media_type(path):
+    return mimetypes.guess_type(path)[0].split("/")[0]
 
 
 def clean_txt(txt):
@@ -81,36 +92,46 @@ def clean_txt(txt):
     return re.sub(r"\s+", " ", no_specials).strip()
 
 
-def get_search_results_given_search_str(search_str, return_just_id=False):
+async def get_search_results_given_search_str(search_str, return_just_id=False):
     # Remove special characters and allow for prefix searches with *
     # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
     query_str = "* AND ".join(clean_txt(search_str).split()) + "*"
     return [
         r["value"] if return_just_id else r["label"]
-        for r in QS.episodes.search_show_names_in_full_text_index(
-            tv_conn, search_str=query_str
+        async for r in QS.episodes.search_show_names_in_full_text_index(
+            db["tv"], search_str=query_str
         )
     ]
 
 
 # Called by the jqueryui autocomplete widget for top-episodes
 @app.get("/search")
-def search(term: str = ""):
-    return get_search_results_given_search_str(search_str=clean_txt(term))
+async def search(term: str = ""):
+    return await get_search_results_given_search_str(search_str=clean_txt(term))
 
 
 @app.get("/episodes")
 @app.get("/episodes/{imdb_show_id}")
 @app.get("/episodes/{imdb_show_id}/{max_rank_pct}")
-def get_top_episodes_for_show(
+async def get_top_episodes_for_show(
     request: Request, imdb_show_id: str = None, max_rank_pct: int = 20
 ):
     imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
-    show_meta = QS.episodes.get_basic_show_info(tv_conn, imdb_show_id=imdb_show_id_int)
-    seasons = QS.episodes.get_seasons_summary(tv_conn, imdb_show_id=imdb_show_id_int)
-    episodes = QS.episodes.get_top_episodes_for_show(
-        tv_conn, imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
+    show_meta = await QS.episodes.get_basic_show_info(
+        db["tv"], imdb_show_id=imdb_show_id_int
     )
+    seasons = [
+        row
+        async for row in QS.episodes.get_seasons_summary(
+            db["tv"], imdb_show_id=imdb_show_id_int
+        )
+    ]
+    episodes = [
+        row
+        async for row in QS.episodes.get_top_episodes_for_show(
+            db["tv"], imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
+        )
+    ]
     title = (
         (show_meta["primaryTitle"] + " 📺 " + imdb_show_id)
         if imdb_show_id
@@ -133,7 +154,7 @@ def get_top_episodes_for_show(
 @app.post("/episodes")
 @app.post("/episodes/{imdb_show_id}")
 @app.post("/episodes/{imdb_show_id}/{max_rank_pct}")
-def post_top_episodes_for_show(
+async def post_top_episodes_for_show(
     request: Request,
     imdb_show_id: str = None,
     max_rank_pct: int = 20,
@@ -152,7 +173,7 @@ def post_top_episodes_for_show(
         if clean_imdb_id is None and len(clean_imdb_id_input) >= 2:
             # Example input: "sponge" -> 0206512
             clean_imdb_id = (
-                get_search_results_given_search_str(
+                await get_search_results_given_search_str(
                     clean_imdb_id_input, return_just_id=True
                 )
                 or [None]
@@ -169,12 +190,13 @@ def post_top_episodes_for_show(
 # Just fetch the most recent 10 top posts
 @app.get("/permalink/{media_hash}")
 @app.get("/permalink/{media_hash}/{ts_ins}")
-def permalink_top(request: Request, media_hash: str, ts_ins: str = None):
-    posts = QS.topcat.get_posts_for_hash(cat_conn, media_hash=media_hash, ts_ins=ts_ins)
+async def permalink_top(request: Request, media_hash: str, ts_ins: str = None):
     # We need to know if the url is for a video or a picture!
     posts = [
-        {**post, "type": mimetypes.guess_type(post["media"])[0].split("/")[0]}
-        for post in posts
+        {**dict(row), "type": _media_type(row["media"])}
+        async for row in QS.topcat.get_posts_for_hash(
+            db["cat"], media_hash=media_hash, ts_ins=ts_ins
+        )
     ]
     return templates.TemplateResponse(
         request,
@@ -185,12 +207,17 @@ def permalink_top(request: Request, media_hash: str, ts_ins: str = None):
 
 @app.get("/books")
 @app.get("/books/{book_category}")
-def get_top_books(request: Request, book_category: str = "Books"):
+async def get_top_books(request: Request, book_category: str = "Books"):
     title = "Top Books"
     book_categories = [
-        c["category"] for c in QS.books.get_categories_for_top_books(books_conn)
+        c["category"] async for c in QS.books.get_categories_for_top_books(db["books"])
     ]
-    top_books = QS.books.get_top_books_for_category(books_conn, category=book_category)
+    top_books = [
+        row
+        async for row in QS.books.get_top_books_for_category(
+            db["books"], category=book_category
+        )
+    ]
     return templates.TemplateResponse(
         request,
         "books.html",
