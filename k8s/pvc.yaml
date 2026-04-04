@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nh-website-data
+  labels:
+    app: nh-website
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # ~/.top_cat/db (~500MB), ~/imdb.db (~3GB), ~/top-books.db (~50MB)
+      storage: 10Gi
