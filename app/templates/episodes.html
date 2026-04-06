@@ -1,29 +1,79 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <style>
+    .search-help-hint { position: relative; }
+    .search-help-hint::after {
+      content: "Filtered by your search words, sorted by popularity";
+      display: none;
+      position: absolute;
+      left: 1.2em;
+      top: -0.3em;
+      background: #333;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .search-help-hint:hover::after { display: block; }
+  </style>
   <div class="container bg-light rounded pt-3">
     <form action="" method="post" novalidate>
         <div class="form-row">
-            <div class="form-group col-md-8">
-              <label for="imdb_show_id">Show Name Search (or IMDb show ID)</label> <br>
-              <input type="text" name="imdb_show_id" id="imdb_show_id" size="32" class="autocomplete" placeholder="type your search query here" value="{{ show_meta.label if imdb_show_id else '' }}">
+            <div class="form-group col-md-6">
+              <label for="imdb_show_id">Show Name Search (or IMDb show ID)
+                <span class="search-help-hint" data-toggle="modal" data-target="#searchHelpModal" style="cursor:pointer;">🤔</span>
+              </label> <br>
+              <input type="text" name="imdb_show_id" id="imdb_show_id" class="autocomplete w-100" placeholder="type your search query here" value="{{ show_meta.label if imdb_show_id else '' }}">
+              <input type="submit" name="submit" class="btn btn-primary mt-2 w-100" value="Show the best episodes">
             </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-6">
               <label for="max_rank_pct">Show top __% percent (below)</label> <br>
-              <input type="number" name="max_rank_pct" id="max_rank_pct" size="32" value="{{ max_rank_pct or '' }}">
+              <div class="d-flex align-items-center">
+                <input type="range" id="max_rank_pct_slider" min="1" max="100" value="{{ max_rank_pct or 20 }}" style="flex:1;">
+                <input type="number" name="max_rank_pct" id="max_rank_pct" min="1" max="100" style="width:4em;" class="ml-2" value="{{ max_rank_pct or '' }}">
+              </div>
+              <div class="btn-group mt-1 w-100">
+                {% for val in [5, 10, 20, 50, 80, 100] %}
+                  <button type="button" class="btn btn-sm btn-outline-secondary pct-preset" data-value="{{ val }}">{{ val }}%</button>
+                {% endfor %}
+              </div>
             </div>
         </div>
-        <input type="submit" name="submit" class="btn btn-primary form-group" value="Show the best episodes">
     </form>
     <script>
         $( document ).ready(function() {
             $( ".autocomplete" ).autocomplete({
                 source: '/search'
             });
+            var slider = document.getElementById('max_rank_pct_slider');
+            var number = document.getElementById('max_rank_pct');
+            var imdbShowId = "{{ imdb_show_id or '' }}";
+            function navigateToPct(v) {
+                if (imdbShowId) window.location.href = '/episodes/' + imdbShowId + '/' + v;
+            }
+            slider.addEventListener('input', function() { number.value = slider.value; });
+            slider.addEventListener('change', function() { navigateToPct(slider.value); });
+            number.addEventListener('input', function() { slider.value = number.value; });
+            document.querySelectorAll('.pct-preset').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var v = this.dataset.value;
+                    slider.value = v;
+                    number.value = v;
+                    navigateToPct(v);
+                });
+            });
         });
     </script>
 
   {% if imdb_show_id is not none %}
+
+    <style>
+        .table td, .table th { border: 1px solid #999 !important; }
+    </style>
 
     <hr>
     <h2 id="show-meta">Show Metadata</h1>
@@ -81,7 +131,7 @@
     <hr>
     <h2 id="episodes">Top Episodes</h1>
     <hr>
-    <table class="table table-hover table-sm table-striped table-bordered">
+    <table id="episodes-table" data-threshold="{{ 100 - max_rank_pct }}" class="table table-hover table-sm table-striped table-bordered">
         <thead>
             <tr>
                 {% if request.state.is_mobile %}
@@ -105,7 +155,7 @@
         </thead>
         <tbody>
             {% for episode in episodes %}
-                <tr>
+                <tr data-percentile="{{ episode.percentile|int }}">
                     {% if request.state.is_mobile %}
                         <!-- <td> {{ loop.index }}</td> -->
                         <td> {{ episode.seasonNumber }} </td>
@@ -127,6 +177,29 @@
             {% endfor %}
         </tbody>
     </table>
+    <script>
+        (function() {
+            const table = document.getElementById('episodes-table');
+            if (!table) return;
+            const threshold = parseFloat(table.dataset.threshold);
+            table.querySelectorAll('tr[data-percentile]').forEach(function(row) {
+                const pct = parseFloat(row.dataset.percentile);
+                let r, g, b;
+                if (pct <= threshold) {
+                    const t = threshold > 0 ? pct / threshold : 0;
+                    r = 255;
+                    g = Math.round(190 + (255 - 190) * t);
+                    b = Math.round(190 + (215 - 190) * t);
+                } else {
+                    const t = (100 - threshold) > 0 ? (pct - threshold) / (100 - threshold) : 1;
+                    r = Math.round(255 + (190 - 255) * t);
+                    g = Math.round(255 + (245 - 255) * t);
+                    b = Math.round(215 + (190 - 215) * t);
+                }
+                row.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+            });
+        })();
+    </script>
 
 
 
@@ -134,6 +207,7 @@
 
 
 
+    <hr>
     <div class="container px-5">
         <p> Hello and welcome to Top Episodes. </p>
         <p> To look for your favorite show use the search box above and click "Show the best episodes" </p>
@@ -174,4 +248,24 @@
     </div>
   </div>
   {% endif %}
+
+  <div class="modal fade" id="searchHelpModal" tabindex="-1" role="dialog" aria-labelledby="searchHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="searchHelpModalLabel">Show Name Search</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Filtered by your search words, sorted by popularity.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 {% endblock %}

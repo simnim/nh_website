@@ -95,7 +95,10 @@ async def test_episodes_db_queries(tv_conn):
         )
     ]
     assert len(episodes) > 0
-    assert all(ep["percentile"] >= 80 for ep in episodes)
+    assert any(ep["is_top_episode"] == 1 for ep in episodes)
+    assert any(ep["is_top_episode"] == 0 for ep in episodes)
+    assert all(ep["percentile"] >= 80 for ep in episodes if ep["is_top_episode"] == 1)
+    assert all(ep["percentile"] < 80 for ep in episodes if ep["is_top_episode"] == 0)
 
 
 def test_clean_txt():
@@ -108,6 +111,8 @@ def test_episodes_direct_show(app_server):
     # Star Trek: Voyager tt0112178
     req = requests.get(f"{LOCAL_ADDRESS}/episodes/tt0112178")
     assert req.ok and "Star Trek: Voyager" in req.text
+    assert "data-percentile=" in req.text
+    assert "data-threshold=" in req.text
 
 
 def test_favicon(app_server):
