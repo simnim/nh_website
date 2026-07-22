@@ -3,7 +3,7 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.28 /uv /usr/local/bin/uv
 
 # Copy dependency files first for layer caching
 COPY pyproject.toml uv.lock ./
@@ -13,6 +13,12 @@ RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY app/ ./app/
+
+# Run as non-root. The app reads its SQLite DBs via os.path.expanduser("~/...")
+# (see app/main.py:open_db), so this user's home dir must match the volume
+# mount path in k8s/deployment.yaml.
+RUN useradd --create-home --home-dir /home/appuser appuser
+USER appuser
 
 EXPOSE 8000
 

@@ -51,7 +51,7 @@
             });
             var slider = document.getElementById('max_rank_pct_slider');
             var number = document.getElementById('max_rank_pct');
-            var imdbShowId = "{{ imdb_show_id or '' }}";
+            var imdbShowId = {{ (imdb_show_id or '') | tojson }};
             function navigateToPct(v) {
                 if (imdbShowId) window.location.href = '/episodes/' + imdbShowId + '/' + v;
             }

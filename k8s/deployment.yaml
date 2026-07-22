@@ -19,18 +19,11 @@ spec:
           image: nh-website:latest
           ports:
             - containerPort: 8000
-          env:
-            - name: FLASK_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: nh-website-secrets
-                  key: secret-key
-                  optional: true
           volumeMounts:
-            # All three SQLite DBs live under /root:
-            #   /root/.top_cat/db, /root/imdb.db, /root/top-books.db
+            # All three SQLite DBs live under the appuser home dir:
+            #   /home/appuser/.top_cat/db, /home/appuser/imdb.db, /home/appuser/top-books.db
             - name: data
-              mountPath: /root
+              mountPath: /home/appuser
           readinessProbe:
             httpGet:
               path: /

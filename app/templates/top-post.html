@@ -17,10 +17,10 @@
         <h3> {{ post.title }} </h3>
         {% if post.type == 'video' %}
             <video class="mx-auto d-block mw-100" controls>
-                <source src={{ post.media }} type="video/mp4" >
+                <source src="{{ post.media }}" type="video/mp4" >
             </video>
         {% else %}
-            <img src={{ post.media }} alt="{{ post.title }}" class="mx-auto d-block mw-100">
+            <img src="{{ post.media }}" alt="{{ post.title }}" class="mx-auto d-block mw-100">
         {% endif %}
     </div>
     <hr>

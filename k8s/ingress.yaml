@@ -5,7 +5,7 @@ metadata:
   labels:
     app: nh-website
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
 spec:
   rules:
     - host: topcat.app  # replace with your domain
@@ -18,7 +18,7 @@ spec:
                 name: nh-website
                 port:
                   number: 80
-  # Uncomment to enable TLS (cert-manager example):
+  # TODO: enable TLS before going live. Uncomment (cert-manager example):
   # tls:
   #   - hosts:
   #       - topcat.app
