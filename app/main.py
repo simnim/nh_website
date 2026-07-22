@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import mimetypes
 import os
 import re
@@ -19,7 +20,20 @@ THIS_DIR = Path(__file__).parent
 
 QS = aiosql.from_path(THIS_DIR / "sql", "aiosqlite", kwargs_only=True)
 
+DB_PATHS = {
+    "cat": "~/.nh-website-data/top_cat.db",
+    "tv": "~/.nh-website-data/imdb.db",
+    "books": "~/.nh-website-data/top-books.db",
+}
+
+# The weekly cron/refresh_imdb_data.sh rebuilds imdb.db and atomically mv's it
+# into place. Without this poller, the aiosqlite connection opened below would
+# keep pointing at the old (unlinked) inode for the life of the process.
+DB_RELOAD_POLL_SECONDS = 60
+DB_CLOSE_GRACE_SECONDS = 30
+
 db = {}
+db_mtimes = {}
 
 
 async def open_db(file_name):
@@ -30,14 +44,53 @@ async def open_db(file_name):
     return conn
 
 
+def _get_mtime(file_name):
+    try:
+        return os.stat(os.path.expanduser(file_name)).st_mtime
+    except FileNotFoundError:
+        return None
+
+
+async def _delayed_close(conn, delay=DB_CLOSE_GRACE_SECONDS):
+    await asyncio.sleep(delay)
+    with contextlib.suppress(Exception):
+        await conn.close()
+
+
+async def _reload_db(key, file_name):
+    new_conn = await open_db(file_name)
+    old_conn = db.get(key)
+    db[key] = new_conn
+    if old_conn is not None:
+        asyncio.create_task(_delayed_close(old_conn))
+
+
+async def watch_and_reload_dbs():
+    while True:
+        await asyncio.sleep(DB_RELOAD_POLL_SECONDS)
+        for key, file_name in DB_PATHS.items():
+            try:
+                mtime = await asyncio.to_thread(_get_mtime, file_name)
+                if mtime is not None and mtime != db_mtimes.get(key):
+                    await _reload_db(key, file_name)
+                    db_mtimes[key] = mtime
+            except Exception as e:
+                print(f"WARNING: db reload check failed for {key!r}: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db["cat"], db["tv"], db["books"] = await asyncio.gather(
-        open_db("~/.nh-website-data/top_cat.db"),
-        open_db("~/.nh-website-data/imdb.db"),
-        open_db("~/.nh-website-data/top-books.db"),
+        *(open_db(path) for path in DB_PATHS.values())
     )
+    for key, file_name in DB_PATHS.items():
+        db_mtimes[key] = _get_mtime(file_name)
+
+    watcher_task = asyncio.create_task(watch_and_reload_dbs())
     yield
+    watcher_task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await watcher_task
     for conn in db.values():
         await conn.close()
 

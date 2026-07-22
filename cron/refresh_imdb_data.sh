@@ -24,18 +24,19 @@ done
 rm -f "${TEMP_DB_PATH}"
 
 # Create tables
-cat ${REPO_DIR}/app/sql/episodes/create-tables.sql | sqlite3 -echo ${TEMP_DB_PATH}
+cat "${REPO_DIR}/app/sql/episodes/create-tables.sql" | sqlite3 -echo "${TEMP_DB_PATH}"
 
 # Load data into tables
-python3 ${REPO_DIR}/cron/imdb_load.py ${TEMP_DB_PATH}
+python3 "${REPO_DIR}/cron/imdb_load.py" "${TEMP_DB_PATH}"
 
 # Remove cached downloads now that they're loaded
+# intentionally unquoted: glob must expand to match all three .tsv.gz files
 rm *.tsv.gz
 
 # Add the indexes, computed columns, and delete junk rows
-cat ${REPO_DIR}/app/sql/episodes/add-indexes.sql | sqlite3 -echo ${TEMP_DB_PATH}
+cat "${REPO_DIR}/app/sql/episodes/add-indexes.sql" | sqlite3 -echo "${TEMP_DB_PATH}"
 
 mkdir -p "$(dirname "${DB_FILE_PATH}")"
-mv ${TEMP_DB_PATH} ${DB_FILE_PATH}
+mv "${TEMP_DB_PATH}" "${DB_FILE_PATH}"
 
 popd
