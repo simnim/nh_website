@@ -14,7 +14,7 @@ RUN uv sync --frozen --no-dev
 # Copy application code
 COPY app/ ./app/
 
-# Run as non-root. The app reads its SQLite DBs via os.path.expanduser("~/...")
+# Run as non-root. The app reads its SQLite DBs via os.path.expanduser("~/.nh-website-data/...")
 # (see app/main.py:open_db), so this user's home dir must match the volume
 # mount path in k8s/deployment.yaml.
 RUN useradd --create-home --home-dir /home/appuser appuser

@@ -20,10 +20,10 @@ spec:
           ports:
             - containerPort: 8000
           volumeMounts:
-            # All three SQLite DBs live under the appuser home dir:
-            #   /home/appuser/.top_cat/db, /home/appuser/imdb.db, /home/appuser/top-books.db
+            # All three SQLite DBs live together under this one directory:
+            #   /home/appuser/.nh-website-data/{top_cat.db, imdb.db, top-books.db}
             - name: data
-              mountPath: /home/appuser
+              mountPath: /home/appuser/.nh-website-data
           readinessProbe:
             httpGet:
               path: /

@@ -23,7 +23,9 @@ db = {}
 
 
 async def open_db(file_name):
-    conn = await aiosqlite.connect(os.path.expanduser(file_name))
+    path = os.path.expanduser(file_name)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    conn = await aiosqlite.connect(path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -31,9 +33,9 @@ async def open_db(file_name):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db["cat"], db["tv"], db["books"] = await asyncio.gather(
-        open_db("~/.top_cat/db"),
-        open_db("~/imdb.db"),
-        open_db("~/top-books.db"),
+        open_db("~/.nh-website-data/top_cat.db"),
+        open_db("~/.nh-website-data/imdb.db"),
+        open_db("~/.nh-website-data/top-books.db"),
     )
     yield
     for conn in db.values():

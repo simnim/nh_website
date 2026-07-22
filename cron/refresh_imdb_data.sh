@@ -4,7 +4,7 @@ set -Eeuxo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_DIR="$( cd "$SCRIPT_DIR" && git rev-parse --show-toplevel )"
 
-DB_FILE_PATH="$HOME/imdb.db"
+DB_FILE_PATH="$HOME/.nh-website-data/imdb.db"
 
 # Hop into a temp directory
 pushd $(mktemp -d)
@@ -31,6 +31,7 @@ rm *.tsv.gz
 # Add the indexes, computed columns, and delete junk rows
 cat ${REPO_DIR}/sql/episodes/add-indexes.sql | sqlite3 -echo ${TEMP_DB_PATH}
 
+mkdir -p "$(dirname "${DB_FILE_PATH}")"
 mv ${TEMP_DB_PATH} ${DB_FILE_PATH}
 
 popd

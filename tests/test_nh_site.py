@@ -41,14 +41,14 @@ def app_server():
 
 @pytest.fixture
 async def cat_conn():
-    conn = await open_db("~/.top_cat/db")
+    conn = await open_db("~/.nh-website-data/top_cat.db")
     yield conn
     await conn.close()
 
 
 @pytest.fixture
 async def tv_conn():
-    conn = await open_db("~/imdb.db")
+    conn = await open_db("~/.nh-website-data/imdb.db")
     yield conn
     await conn.close()
 

@@ -9,5 +9,5 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      # ~/.top_cat/db (~500MB), ~/imdb.db (~3GB), ~/top-books.db (~50MB)
+      # ~/.nh-website-data/{top_cat.db (~500MB), imdb.db (~3GB), top-books.db (~50MB)}
       storage: 10Gi
