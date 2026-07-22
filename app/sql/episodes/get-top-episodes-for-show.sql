@@ -19,5 +19,5 @@ INNER JOIN basics ON episode.tconst = basics.tconst
 WHERE
     episode.parenttconst = :imdb_show_id
 ORDER BY
-    episode.seasonnumber,
-    episode.episodenumber;
+    episode.seasonnumber ASC NULLS LAST,
+    episode.episodenumber ASC NULLS LAST;
