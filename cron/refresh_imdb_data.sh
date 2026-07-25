@@ -27,7 +27,7 @@ rm -f "${TEMP_DB_PATH}"
 cat "${REPO_DIR}/app/sql/episodes/create-tables.sql" | sqlite3 -echo "${TEMP_DB_PATH}"
 
 # Load data into tables
-python3 "${REPO_DIR}/cron/imdb_load.py" "${TEMP_DB_PATH}"
+VIRTUAL_ENV="${REPO_DIR}/.venv" uv run "${REPO_DIR}/cron/imdb_load.py" "${TEMP_DB_PATH}"
 
 # Remove cached downloads now that they're loaded
 # intentionally unquoted: glob must expand to match all three .tsv.gz files

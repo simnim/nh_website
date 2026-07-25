@@ -2,6 +2,14 @@
 Hello and welcome to my website's repo.
 Here you'll find just about everything you need, simply provide your own wsgi config.
 
+# Running locally
+Start a hot-reloading dev server (requires [uv](https://docs.astral.sh/uv/)):
+
+    ./scripts/dev.sh
+
+Serves on http://127.0.0.1:5555 and auto-reloads on `.py` and `.html` changes.
+Override the host/port with env vars, e.g. `PORT=9000 ./scripts/dev.sh`.
+
 # Top Cat
 Find documentation here: https://github.com/simnim/top-cat
 
