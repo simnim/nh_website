@@ -288,6 +288,64 @@ def test_a_marked_place_is_restored_on_reload(app_server, browser):
     assert restored["id"] == row_id and restored["hash"] == f"#{row_id}"
 
 
+def _submit_search(driver, wait, text):
+    "Type a show name over whatever is in the box and submit the form."
+    box = wait.until(EC.visibility_of_element_located((By.NAME, "imdb_show_id")))
+    box.clear()
+    box.send_keys(text)
+    # The suggestion menu drops over the submit button, and it opens on a delay
+    # — so wait for it before dismissing it, or Escape closes nothing and it
+    # arrives in time to swallow the click. Escape leaves the typed term in
+    # place, which is the lazy path the POST handler resolves by searching.
+    menu = (By.CSS_SELECTOR, "ul.ui-autocomplete li")
+    wait.until(EC.visibility_of_element_located(menu))
+    box.send_keys(Keys.ESCAPE)
+    wait.until_not(EC.visibility_of_element_located(menu))
+    assert box.get_attribute("value") == text
+    driver.find_element(By.NAME, "submit").click()
+    wait.until(EC.presence_of_element_located((By.ID, "episodes-table")))
+
+
+def test_searching_a_new_show_drops_the_marker(app_server, browser):
+    """
+    Row ids are s<season>e<episode>, so the hash names a real row on any show.
+    The form posts to the current url and the browser copies its fragment onto
+    the redirect target, which would open the new show with the old show's
+    place marked — on an episode the reader has never seen.
+    """
+    driver, wait = open_show(browser, app_server)
+    require_jquery(driver)
+    # A row Redux has too, so an inherited hash would find something to mark.
+    driver.find_element(By.ID, "s1e3").click()
+    assert driver.execute_script(_MARKER_PROBE)["hash"] == "#s1e3"
+
+    _submit_search(driver, wait, "nebula patrol redux")
+
+    landed = driver.execute_script(_MARKER_PROBE)
+    assert fixture_data.REDUX_SHOW_TCONST in driver.current_url, "search should have moved shows"
+    assert landed["marked"] == 0 and landed["id"] is None
+    assert landed["hash"] == ""
+    # The row is still there to be marked; it just is not marked for you.
+    assert driver.find_element(By.ID, "s1e3")
+
+
+def test_resubmitting_the_same_show_keeps_the_marker(app_server, browser):
+    "Submitting is also how a typed cutoff is applied, and that is not a move."
+    driver, wait = open_show(browser, app_server)
+    require_jquery(driver)
+    driver.find_element(By.ID, "s1e3").click()
+
+    pct = driver.find_element(By.NAME, "max_rank_pct")
+    pct.clear()
+    pct.send_keys("50")
+    driver.find_element(By.NAME, "submit").click()
+    wait.until(EC.presence_of_element_located((By.ID, "episodes-table")))
+
+    kept = driver.execute_script(_MARKER_PROBE)
+    assert kept["path"] == f"/episodes/{SHOW}/50"
+    assert kept["id"] == "s1e3" and kept["hash"] == "#s1e3"
+
+
 def test_n_and_p_step_through_top_episodes_only(app_server, browser):
     driver, _wait = open_show(browser, app_server)
     body = driver.find_element(By.TAG_NAME, "body")
@@ -439,6 +497,48 @@ def test_rows_are_washed_red_below_the_cutoff_and_green_above(app_server, browse
     best = max(washes, key=lambda w: w["pct"])
     worst = min(washes, key=lambda w: w["pct"])
     assert best["r"] < worst["r"] and best["g"] > best["r"]
+
+
+_SEASON_WASH_PROBE = """
+    return Array.from(document.querySelectorAll(
+        '#seasons-table tbody tr[data-percentile]')).map(function(row) {
+        const m = getComputedStyle(row).backgroundColor.match(/\\d+/g).map(Number);
+        return {r: m[0], g: m[1], b: m[2], pct: Number(row.dataset.percentile)};
+    });
+"""
+
+
+def test_seasons_are_washed_against_an_average_season(app_server, browser):
+    "Same ramp as the episodes table, pivoted on 50 rather than on the cutoff."
+    driver, _wait = open_show(browser, app_server)
+    washes = driver.execute_script(_SEASON_WASH_PROBE)
+
+    assert len(washes) == 4
+    for wash in washes:
+        if wash["pct"] < 50:
+            assert wash["r"] > wash["g"], f"a below-average season should read red: {wash}"
+        else:
+            assert wash["g"] >= wash["r"], f"an above-average season should read green: {wash}"
+
+    # Ordered by percentile, the wash runs monotonically from red to green.
+    ramp = sorted(washes, key=lambda w: w["pct"])
+    assert ramp[0]["r"] >= ramp[-1]["r"] and ramp[0]["g"] <= ramp[-1]["g"]
+
+    # The cutoff slider retunes the episodes table; a season is not measured
+    # against the cutoff, so its wash must not move with it.
+    driver.get(f"{app_server}/episodes/{SHOW}/80")
+    WebDriverWait(driver, timeout=20).until(EC.presence_of_element_located((By.ID, "seasons-table")))
+    assert driver.execute_script(_SEASON_WASH_PROBE) == washes
+
+    # Redux's two seasons sit further than the 25-point span from the pivot, so
+    # they clamp to the ends of the ramp — which is what stops season averages,
+    # which cluster hard around 50, from all washing the same pale yellow.
+    driver.get(f"{app_server}/episodes/{fixture_data.REDUX_SHOW_TCONST}")
+    WebDriverWait(driver, timeout=20).until(EC.presence_of_element_located((By.ID, "seasons-table")))
+    redux = driver.execute_script(_SEASON_WASH_PROBE)
+    assert [w["pct"] for w in redux] == [22, 77]
+    assert (redux[0]["r"], redux[0]["g"], redux[0]["b"]) == (255, 190, 190)
+    assert (redux[1]["r"], redux[1]["g"], redux[1]["b"]) == (190, 245, 190)
 
 
 def test_percentile_bars_match_the_percentiles(app_server, browser):

@@ -304,8 +304,25 @@ def test_seasons_summary_is_rendered(client, fixture_tv_queries):
     for season in seasons:
         assert f"> {season['seasonNumber']} </td>" in body
         assert f'style="width: {season["average_percentile"]}%"' in body
+        # Carried on the row for the wash script, in both layouts.
+        assert f'<tr data-percentile="{season["average_percentile"]}">' in body
     # A season has no top/not-top verdict, so its bar carries no cutoff tick.
     assert "pct-cutoff" not in body
+    # The wash pivots on an average season, not on the episode cutoff, and
+    # reaches full strength well inside 0..100 because averages cluster.
+    assert 'id="seasons-table" data-threshold="50" data-wash-span="25"' in body
+
+
+def test_mobile_season_rows_still_carry_the_percentile(client, fixture_tv_queries):
+    "The wash is the only thing saying better-or-worse once the bar column is gone."
+    queries, conn = fixture_tv_queries
+    seasons = list(queries.episodes.get_seasons_summary(conn, imdb_show_id=fixture_data.MAIN_SHOW_ID))
+    html = client.get(f"/episodes/{SHOW}", headers={"user-agent": MOBILE_UA}).text
+    body = html[html.index('id="seasons"') : html.index('id="episodes"')]
+
+    assert "pct-track" not in body
+    for season in seasons:
+        assert f'<tr data-percentile="{season["average_percentile"]}">' in body
 
 
 def test_mobile_episode_table_drops_the_wide_columns(client):

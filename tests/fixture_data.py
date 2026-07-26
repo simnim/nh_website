@@ -37,6 +37,12 @@ MAIN_SHOW_TCONST = "tt1000001"
 MAIN_SHOW_LABEL = "Nebula Patrol [1995-2001] = tt1000001"
 MAIN_SHOW_EPISODES = 100
 
+# Six episodes a season against a 37-step permutation puts Redux's two season
+# averages far apart (22 and 77), which the main show — 25 episodes a season,
+# so every season averages out near 50 — cannot do. The seasons row wash clamps
+# past a fixed distance from 50, and this is the show that reaches it.
+REDUX_SHOW_TCONST = "tt1000002"
+
 # Quiet Bakery ends with an unaired special that imdb lists without season or
 # episode numbers — the template has a separate row-id branch for those.
 NULL_NUMBERED_SHOW_TCONST = "tt2000003"
@@ -108,7 +114,7 @@ def build_tv_db(path):
                 (tconst, parent, season, episode),
             )
             conn.execute(
-                'insert into ratings ("tconst", "averageRating", "numVotes")' " values (?, ?, ?)",
+                'insert into ratings ("tconst", "averageRating", "numVotes") values (?, ?, ?)',
                 (tconst, rating, votes),
             )
         conn.commit()
@@ -227,7 +233,7 @@ def build_cat_db(path):
             )
         for post_id, (url, title, media_hash, ts_ins, label) in enumerate(rows, start=1):
             conn.execute(
-                "insert into post (post_id, url, title, media_hash, ts_ins)" " values (?, ?, ?, ?, ?)",
+                "insert into post (post_id, url, title, media_hash, ts_ins) values (?, ?, ?, ?, ?)",
                 (post_id, url, title, media_hash, ts_ins),
             )
             if label:

@@ -58,6 +58,26 @@
             slider.addEventListener('input', function() { number.value = slider.value; });
             slider.addEventListener('change', function() { navigateToPct(slider.value); });
             number.addEventListener('input', function() { slider.value = number.value; });
+
+            // Searching for a different show has to drop the episode marker.
+            // Row ids are s<season>e<episode>, which mean a different episode on
+            // every show, and the hash rides along by itself: the form posts to
+            // the current url, fragment included, and a browser copies that
+            // fragment onto the target of the 303 that comes back. So the new
+            // show would open with someone else's place marked.
+            //
+            // Only when the show actually changed — submitting is also how a
+            // typed cutoff is applied, and that is the same show, where keeping
+            // the marker is the point (as with the slider above).
+            var showInput = document.getElementById('imdb_show_id');
+            var initialShow = showInput.value;
+            if (showInput.form) {
+                showInput.form.addEventListener('submit', function() {
+                    if (location.hash && showInput.value !== initialShow) {
+                        history.replaceState(null, '', location.pathname + location.search);
+                    }
+                });
+            }
             document.querySelectorAll('.pct-preset').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     var v = this.dataset.value;
@@ -155,7 +175,17 @@
     <hr>
     <h2 id="seasons">Top Seasons</h1>
     <hr>
-    <table class="table table-hover table-sm table-striped table-bordered sticky-head">
+    {# Pivot 50, not the top-N% cutoff: a season average sits near the middle by
+       construction (percentiles are uniform across the show), so the cutoff
+       would paint almost every season red. 50 is a real landmark — the average
+       season — and reads as "better/worse than this show's typical season".
+
+       Span 25 for the same reason. Averaging pulls seasons in hard: real shows
+       land in roughly 35-65, so a ramp reaching full strength only at 0 and 100
+       would wash every season the same pale yellow and say nothing. It is still
+       an absolute scale, so seasons stay comparable between shows — a show with
+       genuinely even seasons is meant to look flat. #}
+    <table id="seasons-table" data-threshold="50" data-wash-span="25" class="table table-hover table-sm table-striped table-bordered sticky-head">
         <thead>
             <tr>
                 {% if request.state.is_mobile %}
@@ -175,7 +205,7 @@
 
         <tbody>
             {% for season in seasons %}
-                <tr>
+                <tr data-percentile="{{ season.average_percentile }}">
                     {% if request.state.is_mobile %}
                         <td> {{ season.seasonNumber }} </td>
                         <td> {{ season.average_rating }} </td>
@@ -186,8 +216,9 @@
                         <td> {{ season.average_num_votes }} </td>
                         <td> {{ season.average_rating }} </td>
                         <td class="text-center"> {{ season.average_percentile }} </td>
-                        {# Always neutral, and no cutoff tick: a season carries no
-                           top/not-top classification, so either would imply one. #}
+                        {# The bar stays neutral and gets no cutoff tick: a season
+                           carries no top/not-top classification, so either would
+                           imply one. Better-or-worse is what the row wash says. #}
                         <td class="pct-cell">
                             <div class="pct-track" title="Average percentile {{ season.average_percentile }} of 100">
                                 <div class="pct-fill" style="width: {{ season.average_percentile }}%"></div>
@@ -274,36 +305,63 @@
         </tbody>
     </table>
     <script>
+        // Red/green row wash, shared by both tables. A row's percentile is placed
+        // against its table's `data-threshold`: at the threshold the wash is at
+        // its palest, and it deepens towards red going down and green going up,
+        // so the two halves meet in the same colour and the ramp is continuous.
+        //
+        // What the threshold means is the table's business — the top-N% cutoff
+        // for episodes, an average season for seasons — but the pale band always
+        // marks it, so the same colour means the same thing in both.
+        //
+        // `data-wash-span` is how far from the threshold the wash takes to reach
+        // full strength, beyond which it clamps. Without it the ramp stretches to
+        // whichever end of the scale it is heading for, which is right for
+        // episode percentiles because they really do fill 0..100. Season
+        // averages do not, so the seasons table asks for a shorter span; see the
+        // note on that table.
+        (function() {
+            document.querySelectorAll('table[data-threshold]').forEach(function(table) {
+                const threshold = parseFloat(table.dataset.threshold);
+                const span = parseFloat(table.dataset.washSpan);
+                table.querySelectorAll('tbody tr[data-percentile]').forEach(function(row) {
+                    const pct = parseFloat(row.dataset.percentile);
+                    // A season with no rated episodes has no percentile to show;
+                    // leave the row alone rather than washing it NaN-coloured.
+                    if (!isFinite(pct)) return;
+                    const below = pct < threshold;
+                    const reach = isFinite(span) ? span : (below ? threshold : 100 - threshold);
+                    // 0 at the threshold, 1 at full strength.
+                    const t = reach > 0 ? Math.min(Math.abs(pct - threshold) / reach, 1) : 1;
+                    const r = below ? 255 : Math.round(255 - (255 - 190) * t);
+                    const g = below ? Math.round(255 - (255 - 190) * t) : Math.round(255 - (255 - 245) * t);
+                    const b = Math.round(215 - (215 - 190) * t);
+                    row.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+                });
+            });
+        })();
+    </script>
+
+    <script>
         (function() {
             const table = document.getElementById('episodes-table');
             if (!table) return;
             const threshold = parseFloat(table.dataset.threshold);
             const rows = Array.from(table.querySelectorAll('tbody tr[data-percentile]'));
             const order = new Map(rows.map(function(row, i) { return [row, i]; }));
-            // The top episodes are exactly the rows the loop below colours green,
+            // The top episodes are exactly the rows the wash above colours green,
             // so the marker never lands somewhere the colouring disagrees with.
             // The >= boundary matches the SQL is_top_episode flag that colours the
-            // percentile bars, so the wash, the bars and this nav all agree.
+            // percentile bars, so the wash, the bars and this nav all agree — and
+            // it is the same test that splits the wash, so the hide toggle can
+            // never disagree with what the colours show.
             const topRows = [];
             rows.forEach(function(row) {
-                const pct = parseFloat(row.dataset.percentile);
-                let r, g, b;
-                if (pct < threshold) {
-                    // Same test that picks the red wash, so the hide toggle can
-                    // never disagree with what the colours show.
+                if (parseFloat(row.dataset.percentile) < threshold) {
                     row.classList.add('below-cutoff');
-                    const t = threshold > 0 ? pct / threshold : 0;
-                    r = 255;
-                    g = Math.round(190 + (255 - 190) * t);
-                    b = Math.round(190 + (215 - 190) * t);
                 } else {
-                    const t = (100 - threshold) > 0 ? (pct - threshold) / (100 - threshold) : 1;
-                    r = Math.round(255 + (190 - 255) * t);
-                    g = Math.round(255 + (245 - 255) * t);
-                    b = Math.round(215 + (190 - 215) * t);
                     topRows.push(row);
                 }
-                row.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
             });
 
             // Current-episode marker. Position lives in the URL hash so it
