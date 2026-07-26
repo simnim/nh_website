@@ -12,7 +12,7 @@ uv run pytest                         # whole suite
 uv run pytest -m "not browser"        # fast suite: everything but selenium, in seconds
 uv run pytest -m "not realdata"       # skip tests that need ~/.nh-website-data loaded
 uv run pytest tests/test_routes.py::test_name   # single test
-uv run pre-commit run --all-files     # black, isort, flake8, sqlfluff (sqlite dialect)
+uv run pre-commit run --all-files     # ruff (lint + import sort), black, sqlfluff (sqlite dialect)
 ```
 
 `pyproject.toml` sets `asyncio_mode = "auto"`, so async test functions need no decorator.

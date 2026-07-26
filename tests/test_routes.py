@@ -38,11 +38,7 @@ def episodes_table(html):
 
 def db_episodes(fixture_tv_queries, show_id, max_rank_pct):
     queries, conn = fixture_tv_queries
-    return list(
-        queries.episodes.get_top_episodes_for_show(
-            conn, imdb_show_id=show_id, max_rank_pct=max_rank_pct
-        )
-    )
+    return list(queries.episodes.get_top_episodes_for_show(conn, imdb_show_id=show_id, max_rank_pct=max_rank_pct))
 
 
 # ---------------------------------------------------------------------------
@@ -102,9 +98,7 @@ def test_favicon_redirects_to_the_static_file(client):
     assert followed.headers["content-type"].startswith("image/")
 
 
-@pytest.mark.parametrize(
-    "path", ["/static/favicon.ico", "/static/topcat_index.jpg", "/static/fixAudio.js"]
-)
+@pytest.mark.parametrize("path", ["/static/favicon.ico", "/static/topcat_index.jpg", "/static/fixAudio.js"])
 def test_static_files_are_served(client, path):
     resp = client.get(path)
     assert resp.status_code == 200 and resp.content
@@ -167,9 +161,7 @@ def test_permalink_shows_every_posting_of_that_media(client):
 
 
 def test_permalink_with_a_timestamp_narrows_to_one_posting(client):
-    html = client.get(
-        f"/permalink/{fixture_data.REPOSTED_HASH}/{fixture_data.REPOSTED_TS}"
-    ).text
+    html = client.get(f"/permalink/{fixture_data.REPOSTED_HASH}/{fixture_data.REPOSTED_TS}").text
     assert "Cat in a box (repost)" in html
     assert html.count("<h3>") == 1
 
@@ -249,9 +241,7 @@ def test_episodes_page_shows_the_metadata(client):
     assert f'value="{fixture_data.MAIN_SHOW_LABEL}"' in resp.text
 
 
-def test_episodes_page_lists_every_episode_with_its_percentile(
-    client, fixture_tv_queries
-):
+def test_episodes_page_lists_every_episode_with_its_percentile(client, fixture_tv_queries):
     html = client.get(f"/episodes/{SHOW}").text
     rows = episode_rows(html)
     expected = db_episodes(fixture_tv_queries, fixture_data.MAIN_SHOW_ID, 20)
@@ -265,10 +255,7 @@ def test_episodes_page_lists_every_episode_with_its_percentile(
 def test_episode_colouring_matches_the_sql_top_flag(client, fixture_tv_queries):
     "The green bars, the red/green wash and n/p navigation all key off this."
     html = client.get(f"/episodes/{SHOW}/20").text
-    expected_top = sum(
-        ep["is_top_episode"]
-        for ep in db_episodes(fixture_tv_queries, fixture_data.MAIN_SHOW_ID, 20)
-    )
+    expected_top = sum(ep["is_top_episode"] for ep in db_episodes(fixture_tv_queries, fixture_data.MAIN_SHOW_ID, 20))
 
     assert expected_top > 0
     assert html.count("pct-fill is-top") == expected_top
@@ -309,11 +296,7 @@ def test_episodes_without_season_numbers_still_get_a_row_id(client):
 
 def test_seasons_summary_is_rendered(client, fixture_tv_queries):
     queries, conn = fixture_tv_queries
-    seasons = list(
-        queries.episodes.get_seasons_summary(
-            conn, imdb_show_id=fixture_data.MAIN_SHOW_ID
-        )
-    )
+    seasons = list(queries.episodes.get_seasons_summary(conn, imdb_show_id=fixture_data.MAIN_SHOW_ID))
     html = client.get(f"/episodes/{SHOW}").text
     body = html[html.index('id="seasons"') : html.index('id="episodes"')]
 
@@ -327,9 +310,7 @@ def test_seasons_summary_is_rendered(client, fixture_tv_queries):
 
 def test_mobile_episode_table_drops_the_wide_columns(client):
     desktop = episodes_table(client.get(f"/episodes/{SHOW}").text)
-    mobile = episodes_table(
-        client.get(f"/episodes/{SHOW}", headers={"user-agent": MOBILE_UA}).text
-    )
+    mobile = episodes_table(client.get(f"/episodes/{SHOW}", headers={"user-agent": MOBILE_UA}).text)
 
     assert "Num Votes" in desktop and "Num Votes" not in mobile
     assert "pct-track" in desktop and "pct-track" not in mobile
@@ -397,16 +378,12 @@ def test_form_submit_with_an_autocomplete_pick_redirects_to_the_show(client):
 
 
 def test_form_submit_keeps_the_chosen_percentage(client):
-    resp = post_episodes(
-        client, imdb_show_id=fixture_data.MAIN_SHOW_LABEL, max_rank_pct=50
-    )
+    resp = post_episodes(client, imdb_show_id=fixture_data.MAIN_SHOW_LABEL, max_rank_pct=50)
     assert resp.headers["location"] == f"/episodes/{SHOW}/50"
 
 
 def test_form_submit_clamps_a_silly_percentage(client):
-    resp = post_episodes(
-        client, imdb_show_id=fixture_data.MAIN_SHOW_LABEL, max_rank_pct=500
-    )
+    resp = post_episodes(client, imdb_show_id=fixture_data.MAIN_SHOW_LABEL, max_rank_pct=500)
     assert resp.headers["location"] == f"/episodes/{SHOW}/100"
 
 
@@ -426,9 +403,7 @@ def test_form_submit_of_free_text_falls_back_to_a_search(client):
 
 
 def test_form_submit_of_gibberish_goes_back_to_the_landing_page(client):
-    assert post_episodes(client, imdb_show_id="zzzzznope").headers["location"] == (
-        "/episodes"
-    )
+    assert post_episodes(client, imdb_show_id="zzzzznope").headers["location"] == ("/episodes")
 
 
 @pytest.mark.parametrize("typed", ["", "   ", "!!!", "x"])

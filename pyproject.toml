@@ -23,7 +23,28 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "selenium>=4.41.0",
     "sqlfluff>=4.1.0",
+    # Keep in step with the ruff-pre-commit rev in .pre-commit-config.yaml.
+    "ruff>=0.16.0",
 ]
+
+[tool.black]
+# 120 everywhere: this and [tool.ruff] line-length must stay equal, or black and
+# ruff's import sorting disagree about where a long line should break.
+line-length = 120
+
+[tool.ruff]
+# Ruff replaces flake8 and isort. Governs both wrapping and E501.
+line-length = 120
+
+[tool.ruff.lint]
+# E/W/F/C90 are the families flake8 ran; I is isort.
+select = ["E", "W", "F", "C90", "I"]
+# E203 conflicts with black's slice spacing; E266 because ### comments are wanted.
+# W503 had no ruff equivalent — the black conflict it worked around can't arise.
+ignore = ["E203", "E266"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 [tool.pytest.ini_options]
 addopts = "-vvv -rA"
 testpaths = ["tests"]

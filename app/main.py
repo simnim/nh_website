@@ -84,9 +84,7 @@ async def watch_and_reload_dbs():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db["cat"], db["tv"], db["books"] = await asyncio.gather(
-        *(open_db(path) for path in DB_PATHS.values())
-    )
+    db["cat"], db["tv"], db["books"] = await asyncio.gather(*(open_db(path) for path in DB_PATHS.values()))
     for key, file_name in DB_PATHS.items():
         db_mtimes[key] = _get_mtime(file_name)
 
@@ -107,9 +105,7 @@ templates = Jinja2Templates(directory=THIS_DIR / "templates")
 class MobileMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         ua = request.headers.get("user-agent", "").lower()
-        request.state.is_mobile = any(
-            m in ua for m in ["mobile", "android", "iphone", "ipad"]
-        )
+        request.state.is_mobile = any(m in ua for m in ["mobile", "android", "iphone", "ipad"])
         return await call_next(request)
 
 
@@ -136,9 +132,7 @@ async def show_subpath(request: Request, label: str):
         {**dict(row), "type": _media_type(row["media"])}
         async for row in QS.topcat.get_top_posts_for_flask(db["cat"], label=label)
     ]
-    return templates.TemplateResponse(
-        request, "top-post.html", {"title": title, "posts": posts, "label": label}
-    )
+    return templates.TemplateResponse(request, "top-post.html", {"title": title, "posts": posts, "label": label})
 
 
 def _media_type(path):
@@ -167,9 +161,7 @@ async def get_search_results_given_search_str(search_str, return_just_id=False):
     query_str = "* AND ".join(terms) + "*"
     return [
         r["value"] if return_just_id else r["label"]
-        async for r in QS.episodes.search_show_names_in_full_text_index(
-            db["tv"], search_str=query_str
-        )
+        async for r in QS.episodes.search_show_names_in_full_text_index(db["tv"], search_str=query_str)
     ]
 
 
@@ -205,39 +197,26 @@ def _episodes_landing(request, max_rank_pct, not_found=None):
 @app.get("/episodes")
 @app.get("/episodes/{imdb_show_id}")
 @app.get("/episodes/{imdb_show_id}/{max_rank_pct}")
-async def get_top_episodes_for_show(
-    request: Request, imdb_show_id: str = None, max_rank_pct: int = 20
-):
+async def get_top_episodes_for_show(request: Request, imdb_show_id: str = None, max_rank_pct: int = 20):
     max_rank_pct = _clamp_pct(max_rank_pct)
     try:
         imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
     except ValueError:
         # Hand-typed or stale url, e.g. /episodes/tt-not-an-id.
         return _episodes_landing(request, max_rank_pct, not_found=imdb_show_id)
-    show_meta = await QS.episodes.get_basic_show_info(
-        db["tv"], imdb_show_id=imdb_show_id_int
-    )
+    show_meta = await QS.episodes.get_basic_show_info(db["tv"], imdb_show_id=imdb_show_id_int)
     if imdb_show_id and show_meta is None:
         # A well-formed id for a show this database has never heard of: the
         # weekly imdb rebuild drops titles, so old links do go stale.
         return _episodes_landing(request, max_rank_pct, not_found=imdb_show_id)
-    seasons = [
-        row
-        async for row in QS.episodes.get_seasons_summary(
-            db["tv"], imdb_show_id=imdb_show_id_int
-        )
-    ]
+    seasons = [row async for row in QS.episodes.get_seasons_summary(db["tv"], imdb_show_id=imdb_show_id_int)]
     episodes = [
         row
         async for row in QS.episodes.get_top_episodes_for_show(
             db["tv"], imdb_show_id=imdb_show_id_int, max_rank_pct=max_rank_pct
         )
     ]
-    title = (
-        (show_meta["primaryTitle"] + " 📺 " + imdb_show_id)
-        if imdb_show_id
-        else "📺 Top Episodes"
-    )
+    title = (show_meta["primaryTitle"] + " 📺 " + imdb_show_id) if imdb_show_id else "📺 Top Episodes"
     return templates.TemplateResponse(
         request,
         "episodes.html",
@@ -266,18 +245,13 @@ async def post_top_episodes_for_show(
     if clean_imdb_id_input:
         # They successfully used the search popup menu: extract out the imdb id
         clean_imdb_id = (
-            re.findall(r"tt[0-9]{5,8}", clean_imdb_id_input)
-            or re.findall(r"^\d{5,8}$", clean_imdb_id_input)
-            or [None]
+            re.findall(r"tt[0-9]{5,8}", clean_imdb_id_input) or re.findall(r"^\d{5,8}$", clean_imdb_id_input) or [None]
         )[0]
         # OR They were extra lazy and hit enter before the search had a chance to respond.
         if clean_imdb_id is None and len(clean_imdb_id_input) >= 2:
             # Example input: "sponge" -> 0206512
             clean_imdb_id = (
-                await get_search_results_given_search_str(
-                    clean_imdb_id_input, return_just_id=True
-                )
-                or [None]
+                await get_search_results_given_search_str(clean_imdb_id_input, return_just_id=True) or [None]
             )[0]
         # Build redirect URL
         if clean_imdb_id:
@@ -295,9 +269,7 @@ async def permalink_top(request: Request, media_hash: str, ts_ins: str = None):
     # We need to know if the url is for a video or a picture!
     posts = [
         {**dict(row), "type": _media_type(row["media"])}
-        async for row in QS.topcat.get_posts_for_hash(
-            db["cat"], media_hash=media_hash, ts_ins=ts_ins
-        )
+        async for row in QS.topcat.get_posts_for_hash(db["cat"], media_hash=media_hash, ts_ins=ts_ins)
     ]
     return templates.TemplateResponse(
         request,
@@ -310,15 +282,8 @@ async def permalink_top(request: Request, media_hash: str, ts_ins: str = None):
 @app.get("/books/{book_category}")
 async def get_top_books(request: Request, book_category: str = "Books"):
     title = "Top Books"
-    book_categories = [
-        c["category"] async for c in QS.books.get_categories_for_top_books(db["books"])
-    ]
-    top_books = [
-        row
-        async for row in QS.books.get_top_books_for_category(
-            db["books"], category=book_category
-        )
-    ]
+    book_categories = [c["category"] async for c in QS.books.get_categories_for_top_books(db["books"])]
+    top_books = [row async for row in QS.books.get_top_books_for_category(db["books"], category=book_category)]
     return templates.TemplateResponse(
         request,
         "books.html",

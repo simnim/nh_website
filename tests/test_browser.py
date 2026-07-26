@@ -27,9 +27,7 @@ def open_show(browser, app_server, path=f"/episodes/{SHOW}/20", **kwargs):
     "A driver parked on an episodes page with the table rendered."
     driver = browser(**kwargs)
     driver.get(f"{app_server}{path}")
-    WebDriverWait(driver, timeout=20).until(
-        EC.presence_of_element_located((By.ID, "episodes-table"))
-    )
+    WebDriverWait(driver, timeout=20).until(EC.presence_of_element_located((By.ID, "episodes-table")))
     return driver, WebDriverWait(driver, timeout=20)
 
 
@@ -50,16 +48,12 @@ def test_search_finds_a_show_and_renders_its_episodes(app_server, browser):
     driver.get(f"{app_server}/episodes")
     require_jquery(driver)
 
-    wait.until(EC.visibility_of_element_located((By.NAME, "imdb_show_id"))).send_keys(
-        "nebula patrol"
-    )
+    wait.until(EC.visibility_of_element_located((By.NAME, "imdb_show_id"))).send_keys("nebula patrol")
     # First suggestion, which is the most-voted match. Addressed by class
     # rather than by the generated ui-id-N, which numbers the menu itself
     # first and so points at the <ul>, not at a row.
     wait.until(
-        EC.visibility_of_element_located(
-            (By.CSS_SELECTOR, "ul.ui-autocomplete li:first-child .ui-menu-item-wrapper")
-        )
+        EC.visibility_of_element_located((By.CSS_SELECTOR, "ul.ui-autocomplete li:first-child .ui-menu-item-wrapper"))
     ).click()
     wait.until(EC.visibility_of_element_located((By.NAME, "submit"))).click()
     # Submitting POSTs, redirects and loads a fresh document; reading
@@ -106,9 +100,7 @@ _HEADER_PROBE = """
     [(None, None), (MOBILE_UA, MOBILE_SIZE)],
     ids=["desktop", "mobile"],
 )
-def test_top_episodes_header_freezes_while_scrolling(
-    app_server, browser, user_agent, size
-):
+def test_top_episodes_header_freezes_while_scrolling(app_server, browser, user_agent, size):
     """
     The Top Episodes header row behaves like an Excel frozen header: it rides at
     the top of the window for as long as its table is on screen.
@@ -130,17 +122,10 @@ def test_top_episodes_header_freezes_while_scrolling(
     wait.until(lambda d: d.execute_script(_HEADER_PROBE)["stuck"])
 
     after = driver.execute_script(_HEADER_PROBE)
-    assert (
-        after["tableTop"] < 0 < after["tableBottom"]
-    ), "table should span the top edge"
+    assert after["tableTop"] < 0 < after["tableBottom"], "table should span the top edge"
     assert after["thTop"] == 0, "header should be pinned to the top of the window"
     # It has to paint over the rows passing underneath, not behind them.
-    assert (
-        driver.execute_script(
-            "return document.elementFromPoint(window.innerWidth / 2, 8).tagName"
-        )
-        == "TH"
-    )
+    assert driver.execute_script("return document.elementFromPoint(window.innerWidth / 2, 8).tagName") == "TH"
 
     # Back at the top, the header sits back down with its table.
     driver.execute_script("window.scrollTo(0, 0);")
@@ -152,18 +137,8 @@ def test_only_one_header_is_pinned_at_a_time(app_server, browser):
     "Both tables are sticky-head; a sticky element is bounded by its own table."
     driver, wait = open_show(browser, app_server)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
-    wait.until(
-        lambda d: d.execute_script(
-            "return document.querySelectorAll('thead.is-stuck').length"
-        )
-        == 1
-    )
-    assert (
-        driver.execute_script(
-            "return document.querySelectorAll('table.sticky-head').length"
-        )
-        == 2
-    )
+    wait.until(lambda d: d.execute_script("return document.querySelectorAll('thead.is-stuck').length") == 1)
+    assert driver.execute_script("return document.querySelectorAll('table.sticky-head').length") == 2
 
 
 # ---------------------------------------------------------------------------
@@ -299,9 +274,7 @@ def test_clicking_an_episode_marks_your_place_in_the_url(app_server, browser):
     other = driver.execute_script(_TOP_ROW_IDS)[7]
     driver.find_element(By.ID, other).click()
     moved = driver.execute_script(_MARKER_PROBE)
-    assert (
-        moved["id"] == other and moved["marked"] == 1 and moved["hash"] == f"#{other}"
-    )
+    assert moved["id"] == other and moved["marked"] == 1 and moved["hash"] == f"#{other}"
 
 
 def test_a_marked_place_is_restored_on_reload(app_server, browser):
@@ -382,18 +355,14 @@ def test_slider_and_number_box_stay_in_sync(app_server, browser):
     require_jquery(driver)
 
     # Both start on the percentage the page was loaded with.
-    assert (
-        driver.find_element(By.ID, "max_rank_pct_slider").get_attribute("value") == "20"
-    )
+    assert driver.find_element(By.ID, "max_rank_pct_slider").get_attribute("value") == "20"
     assert driver.find_element(By.ID, "max_rank_pct").get_attribute("value") == "20"
 
     # Typing in the number box moves the slider, without navigating.
     number = driver.find_element(By.ID, "max_rank_pct")
     number.clear()
     number.send_keys("35")
-    assert (
-        driver.find_element(By.ID, "max_rank_pct_slider").get_attribute("value") == "35"
-    )
+    assert driver.find_element(By.ID, "max_rank_pct_slider").get_attribute("value") == "35"
     assert "/20" in driver.current_url
 
     # Dragging the slider mirrors into the number box, then navigates on release.

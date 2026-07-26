@@ -18,11 +18,14 @@ repos:
     -   id: fix-byte-order-marker
     -   id: mixed-line-ending
     -   id: trailing-whitespace
--   repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
     hooks:
-    -   id: isort
-        additional_dependencies: ["toml", "pyproject"]
+    -   id: ruff-check
+        # Same trick as black below: apply the safe fixes, stage them, and let
+        # ruff's own exit code decide pass/fail (so unfixable lint still fails).
+        # Runs before black so black gets the last word on formatting.
+        entry: bash -c 'ruff check --force-exclude --fix "$@"; rc=$?; git add -- "$@"; exit $rc' --
 -   repo: https://github.com/psf/black
     rev: 26.5.1
     hooks:
@@ -31,10 +34,6 @@ repos:
         # the run. pre-commit decides pass/fail from the unstaged diff, so a
         # hook that stages what it changed leaves that diff untouched.
         entry: bash -c 'black "$@" && git add -- "$@"' --
--   repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-    - id: flake8
 - repo: https://github.com/sqlfluff/sqlfluff
   rev: 4.2.2
   hooks:

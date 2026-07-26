@@ -22,14 +22,10 @@ def test_clean_txt_strips_specials_and_case():
 
 def test_clean_txt_keeps_digits():
     # Show ids arrive through here, so digits and the tt prefix have to survive.
-    assert clean_txt("Star Trek: Voyager [1995-2001] = tt0112178") == (
-        "star trek voyager 1995 2001 tt0112178"
-    )
+    assert clean_txt("Star Trek: Voyager [1995-2001] = tt0112178") == ("star trek voyager 1995 2001 tt0112178")
 
 
-@pytest.mark.parametrize(
-    "raw", ["  ABC %# ^def & lol  ", "!!!", "", "Mixed 123 CASE!!", "tt0112178"]
-)
+@pytest.mark.parametrize("raw", ["  ABC %# ^def & lol  ", "!!!", "", "Mixed 123 CASE!!", "tt0112178"])
 def test_clean_txt_is_idempotent(raw):
     "The docstring promises it, and /search calls it twice on the way in."
     once = clean_txt(raw)
@@ -59,9 +55,7 @@ def test_media_type(url, expected):
     assert _media_type(url) == expected
 
 
-@pytest.mark.parametrize(
-    "given, expected", [(20, 20), (1, 1), (100, 100), (0, 1), (-5, 1), (500, 100)]
-)
+@pytest.mark.parametrize("given, expected", [(20, 20), (1, 1), (100, 100), (0, 1), (-5, 1), (500, 100)])
 def test_clamp_pct(given, expected):
     "Percentages come off the url, where 0 and 500 are just as expressible as 20."
     assert _clamp_pct(given) == expected
@@ -113,9 +107,7 @@ async def test_delayed_close_closes_the_connection(tmp_path):
         await _read_value(conn)
 
 
-async def test_reload_db_swaps_in_the_new_file_and_retires_the_old(
-    tmp_path, monkeypatch
-):
+async def test_reload_db_swaps_in_the_new_file_and_retires_the_old(tmp_path, monkeypatch):
     """
     An open connection follows the inode, not the path.
 

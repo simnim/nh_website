@@ -173,12 +173,7 @@ def _unpopulated_reason(db_key, *required_tables):
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return f"{DB_PATHS[db_key]} is empty — that data is not loaded here"
     with contextlib.closing(sqlite3.connect(path)) as conn:
-        present = {
-            row[0]
-            for row in conn.execute(
-                "select name from sqlite_master where type = 'table'"
-            )
-        }
+        present = {row[0] for row in conn.execute("select name from sqlite_master where type = 'table'")}
     missing = sorted(set(required_tables) - present)
     if missing:
         return f"{DB_PATHS[db_key]} has no {', '.join(missing)} table(s)"
@@ -231,13 +226,7 @@ def _make_driver(user_agent=None):
 
     chromedriver = shutil.which("chromedriver")
     chrome = next(
-        (
-            path
-            for path in map(
-                shutil.which, ("chromium", "chromium-browser", "google-chrome")
-            )
-            if path
-        ),
+        (path for path in map(shutil.which, ("chromium", "chromium-browser", "google-chrome")) if path),
         None,
     )
     if chromedriver and chrome:

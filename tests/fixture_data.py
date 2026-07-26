@@ -48,9 +48,7 @@ def _episode_rows():
     "(tconst, parent, season, episode, title, rating, votes) for every episode."
     tconst = _EPISODE_TCONST_BASE
     for parent, title, start, _end, runtime, genres, seasons, per_season in SHOWS:
-        numbered = [
-            (s, e) for s in range(1, seasons + 1) for e in range(1, per_season + 1)
-        ]
+        numbered = [(s, e) for s in range(1, seasons + 1) for e in range(1, per_season + 1)]
         slots = numbered + ([(None, None)] if parent == 2000003 else [])
         total = len(slots)
         for idx, (season, episode) in enumerate(slots):
@@ -58,11 +56,7 @@ def _episode_rows():
             # 37 is coprime with any of the show sizes here, so ratings are a
             # spread-out permutation and no two episodes of a show tie.
             rating = round(5.0 + ((idx * 37) % total) * (5.0 / total), 2)
-            name = (
-                f"{title} S{season}E{episode}"
-                if season is not None
-                else f"{title} Unaired Special"
-            )
+            name = f"{title} S{season}E{episode}" if season is not None else f"{title} Unaired Special"
             yield (
                 tconst,
                 parent,
@@ -114,8 +108,7 @@ def build_tv_db(path):
                 (tconst, parent, season, episode),
             )
             conn.execute(
-                'insert into ratings ("tconst", "averageRating", "numVotes")'
-                " values (?, ?, ?)",
+                'insert into ratings ("tconst", "averageRating", "numVotes")' " values (?, ?, ?)",
                 (tconst, rating, votes),
             )
         conn.commit()
@@ -232,12 +225,9 @@ def build_cat_db(path):
                     "cat",
                 )
             )
-        for post_id, (url, title, media_hash, ts_ins, label) in enumerate(
-            rows, start=1
-        ):
+        for post_id, (url, title, media_hash, ts_ins, label) in enumerate(rows, start=1):
             conn.execute(
-                "insert into post (post_id, url, title, media_hash, ts_ins)"
-                " values (?, ?, ?, ?, ?)",
+                "insert into post (post_id, url, title, media_hash, ts_ins)" " values (?, ?, ?, ?, ?)",
                 (post_id, url, title, media_hash, ts_ins),
             )
             if label:

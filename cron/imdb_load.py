@@ -26,9 +26,7 @@ FILE_TABLE_MAP = {
 
 for fname, table_name in FILE_TABLE_MAP.items():
     try:
-        for df in pd.read_csv(
-            fname, sep="\t", dtype=str, na_values="\\N", chunksize=10_000
-        ):
+        for df in pd.read_csv(fname, sep="\t", dtype=str, na_values="\\N", chunksize=10_000):
             for tcol in ["tconst", "parentTconst"]:
                 if tcol in df:
                     df[tcol] = df[tcol].str.removeprefix("tt")
