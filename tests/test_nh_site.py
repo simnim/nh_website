@@ -113,6 +113,9 @@ def test_episodes_direct_show(app_server):
     assert req.ok and "Star Trek: Voyager" in req.text
     assert "data-percentile=" in req.text
     assert "data-threshold=" in req.text
+    # Percentile bars render server-side, so they are in the raw HTML
+    assert "pct-fill" in req.text
+    assert "pct-cutoff" in req.text
 
 
 def test_favicon(app_server):
