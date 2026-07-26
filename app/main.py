@@ -20,10 +20,14 @@ THIS_DIR = Path(__file__).parent
 
 QS = aiosql.from_path(THIS_DIR / "sql", "aiosqlite", kwargs_only=True)
 
+# Overridable so a test run (or a second instance) can point at its own data
+# without touching the real ~/.nh-website-data.
+DATA_DIR = os.environ.get("NH_WEBSITE_DATA_DIR", "~/.nh-website-data")
+
 DB_PATHS = {
-    "cat": "~/.nh-website-data/top_cat.db",
-    "tv": "~/.nh-website-data/imdb.db",
-    "books": "~/.nh-website-data/top-books.db",
+    "cat": f"{DATA_DIR}/top_cat.db",
+    "tv": f"{DATA_DIR}/imdb.db",
+    "books": f"{DATA_DIR}/top-books.db",
 }
 
 # The weekly cron/refresh_imdb_data.sh rebuilds imdb.db and atomically mv's it
@@ -138,7 +142,11 @@ async def show_subpath(request: Request, label: str):
 
 
 def _media_type(path):
-    return mimetypes.guess_type(path)[0].split("/")[0]
+    # Reddit hands out the odd extensionless url (galleries, some crossposts);
+    # guess_type says None for those, and the templates render anything that is
+    # not a video as an image anyway.
+    mime = mimetypes.guess_type(path or "")[0]
+    return mime.split("/")[0] if mime else "image"
 
 
 def clean_txt(txt):
@@ -150,7 +158,13 @@ def clean_txt(txt):
 async def get_search_results_given_search_str(search_str, return_just_id=False):
     # Remove special characters and allow for prefix searches with *
     # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
-    query_str = "* AND ".join(clean_txt(search_str).split()) + "*"
+    terms = clean_txt(search_str).split()
+    if not terms:
+        # The autocomplete fires on every keystroke, including the one that
+        # empties the box, and a bare "*" is an fts5 syntax error rather than a
+        # match-everything.
+        return []
+    query_str = "* AND ".join(terms) + "*"
     return [
         r["value"] if return_just_id else r["label"]
         async for r in QS.episodes.search_show_names_in_full_text_index(
@@ -165,16 +179,48 @@ async def search(term: str = ""):
     return await get_search_results_given_search_str(search_str=clean_txt(term))
 
 
+def _clamp_pct(max_rank_pct):
+    "Percentages come straight off the url, where any int is expressible."
+    return min(100, max(1, max_rank_pct))
+
+
+def _episodes_landing(request, max_rank_pct, not_found=None):
+    "The search-and-recommendations page, with an optional 'no such show' note."
+    return templates.TemplateResponse(
+        request,
+        "episodes.html",
+        {
+            "imdb_show_id": None,
+            "max_rank_pct": max_rank_pct,
+            "show_meta": None,
+            "episodes": [],
+            "seasons": [],
+            "title": "📺 Top Episodes",
+            "not_found": not_found,
+        },
+        status_code=404 if not_found else 200,
+    )
+
+
 @app.get("/episodes")
 @app.get("/episodes/{imdb_show_id}")
 @app.get("/episodes/{imdb_show_id}/{max_rank_pct}")
 async def get_top_episodes_for_show(
     request: Request, imdb_show_id: str = None, max_rank_pct: int = 20
 ):
-    imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
+    max_rank_pct = _clamp_pct(max_rank_pct)
+    try:
+        imdb_show_id_int = int(imdb_show_id.lstrip("t")) if imdb_show_id else None
+    except ValueError:
+        # Hand-typed or stale url, e.g. /episodes/tt-not-an-id.
+        return _episodes_landing(request, max_rank_pct, not_found=imdb_show_id)
     show_meta = await QS.episodes.get_basic_show_info(
         db["tv"], imdb_show_id=imdb_show_id_int
     )
+    if imdb_show_id and show_meta is None:
+        # A well-formed id for a show this database has never heard of: the
+        # weekly imdb rebuild drops titles, so old links do go stale.
+        return _episodes_landing(request, max_rank_pct, not_found=imdb_show_id)
     seasons = [
         row
         async for row in QS.episodes.get_seasons_summary(
@@ -235,7 +281,7 @@ async def post_top_episodes_for_show(
             )[0]
         # Build redirect URL
         if clean_imdb_id:
-            url = f"/episodes/{clean_imdb_id}/{max_rank_pct_form or 20}"
+            url = f"/episodes/{clean_imdb_id}/{_clamp_pct(max_rank_pct_form or 20)}"
         else:
             url = "/episodes"
         return RedirectResponse(url=url, status_code=303)

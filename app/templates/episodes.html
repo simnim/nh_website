@@ -439,6 +439,12 @@
 
     <hr>
     <div class="container px-5">
+        {% if not_found %}
+          {# Reached by url only — the search box never produces an unknown id. #}
+          <div class="alert alert-warning" id="show-not-found" role="alert">
+            No show found for <strong>{{ not_found }}</strong>. Try the search box above.
+          </div>
+        {% endif %}
         <p> Hello and welcome to Top Episodes. </p>
         <p> To look for your favorite show use the search box above and click "Show the best episodes" </p>
         <p> This page applies the <a href="https://en.wikipedia.org/wiki/Pareto_principle">Pareto principle</a> to TV series so you can get 4 times more <a href="https://en.wiktionary.org/wiki/util">utils</a> for your time. </p>
