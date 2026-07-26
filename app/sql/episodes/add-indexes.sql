@@ -96,10 +96,17 @@ CREATE VIRTUAL TABLE show_names_fts
 USING fts5(primarytitle, originaltitle, startyear, endyear, content='basics'); -- noqa
 
 -- populate index
-INSERT INTO show_names_fts (rowid, primaryTitle, originalTitle, startYear, endYear)
-SELECT rowid, "primaryTitle", "originalTitle", cast("startYear" AS text), cast("endYear" AS text)
+INSERT INTO show_names_fts (
+    rowid, "primaryTitle", "originalTitle", "startYear", "endYear"
+)
+SELECT
+    rowid,
+    "primaryTitle",
+    "originalTitle",
+    cast("startYear" AS text) AS "startYear",
+    cast("endYear" AS text) AS "endYear"
 FROM basics
-WHERE titleType in ('tvSeries', 'tvMiniSeries');
+WHERE "titleType" IN ('tvSeries', 'tvMiniSeries');
 
 
-VACUUM;
+VACUUM; -- noqa: PRS

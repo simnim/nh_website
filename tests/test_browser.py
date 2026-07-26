@@ -53,8 +53,14 @@ def test_search_finds_a_show_and_renders_its_episodes(app_server, browser):
     wait.until(EC.visibility_of_element_located((By.NAME, "imdb_show_id"))).send_keys(
         "nebula patrol"
     )
-    # First suggestion, which is the most-voted match.
-    wait.until(EC.visibility_of_element_located((By.ID, "ui-id-1"))).click()
+    # First suggestion, which is the most-voted match. Addressed by class
+    # rather than by the generated ui-id-N, which numbers the menu itself
+    # first and so points at the <ul>, not at a row.
+    wait.until(
+        EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "ul.ui-autocomplete li:first-child .ui-menu-item-wrapper")
+        )
+    ).click()
     wait.until(EC.visibility_of_element_located((By.NAME, "submit"))).click()
     # Submitting POSTs, redirects and loads a fresh document; reading
     # page_source before the results land yields an empty body.
