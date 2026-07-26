@@ -21,11 +21,10 @@ repos:
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.0
     hooks:
-    -   id: ruff-check
-        # Same trick as black below: apply the safe fixes, stage them, and let
-        # ruff's own exit code decide pass/fail (so unfixable lint still fails).
-        # Runs before black so black gets the last word on formatting.
-        entry: bash -c 'ruff check --force-exclude --fix "$@"; rc=$?; git add -- "$@"; exit $rc' --
+    - id: ruff-check
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
 -   repo: https://github.com/psf/black
     rev: 26.5.1
     hooks:
