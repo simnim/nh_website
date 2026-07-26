@@ -76,15 +76,6 @@
 
         #episodes-table tbody tr { cursor: pointer; }
 
-        /* Reserve the arrow's width on every row so moving the marker never
-           shifts the first cell's contents sideways. */
-        #episodes-table tbody td:first-child::before {
-            content: '';
-            display: inline-block;
-            width: 1.5em;
-        }
-        #episodes-table tbody tr.current-episode > td:first-child::before { content: '👉'; }
-
         /* Bootstrap's .table is border-collapse: collapse, so the marker
            border has to go on the cells, not the row. */
         #episodes-table tbody tr.current-episode > td {
@@ -112,6 +103,35 @@
            underneath it. */
         .pct-cutoff { position: absolute; top: -2px; bottom: -2px; left: 0;
                       width: 1px; background-color: #52514e; }
+
+        /* Frozen header row, Excel style. Sticks to the top of the window while
+           its own table is on screen; a sticky element is bounded by its
+           containing block, so each header releases when its table scrolls past
+           and the two are never pinned at once. */
+        .sticky-head thead th {
+            position: sticky;
+            top: 0;
+            /* Over the tbody cell backgrounds and the current-episode borders. */
+            z-index: 2;
+            /* The header is transparent by default and shows the container's
+               .bg-light; once it detaches, the coloured rows would scroll
+               straight through it, so pin that colour down explicitly. */
+            background-color: #f8f9fa;
+            /* Collapsed borders are painted by the table, not the cell, so the
+               border rule above does not travel with a detached th — these
+               inset shadows redraw the four edges on the cell itself. */
+            box-shadow: inset 1px 1px 0 #999, inset -1px -1px 0 #999;
+        }
+        /* Only while stuck, so the row reads as floating over the data rather
+           than as a misaligned first row. One declaration: a second box-shadow
+           would replace the inset borders instead of adding to them. */
+        .sticky-head thead.is-stuck th {
+            box-shadow: inset 1px 1px 0 #999, inset -1px -1px 0 #999,
+                        0 3px 6px rgba(0, 0, 0, .18);
+        }
+        /* Rows are hash targets, so a fresh load jumps one to y=0 — under the
+           frozen header without this. */
+        #episodes-table tbody tr { scroll-margin-top: 4rem; }
     </style>
 
     <hr>
@@ -130,7 +150,7 @@
     <hr>
     <h2 id="seasons">Top Seasons</h1>
     <hr>
-    <table class="table table-hover table-sm table-striped table-bordered">
+    <table class="table table-hover table-sm table-striped table-bordered sticky-head">
         <thead>
             <tr>
                 {% if request.state.is_mobile %}
@@ -182,7 +202,7 @@
         Click an episode to mark your place — then press <kbd>n</kbd> / <kbd>p</kbd>
         to step through the top episodes, <kbd>Esc</kbd> to clear.
     </p>
-    <table id="episodes-table" data-threshold="{{ 100 - max_rank_pct }}" class="table table-hover table-sm table-striped table-bordered">
+    <table id="episodes-table" data-threshold="{{ 100 - max_rank_pct }}" class="table table-hover table-sm table-striped table-bordered sticky-head">
         <thead>
             <tr>
                 {% if request.state.is_mobile %}
@@ -318,6 +338,48 @@
             const initial = location.hash
                 && document.getElementById(decodeURIComponent(location.hash.slice(1)));
             if (initial && order.has(initial)) setCurrent(initial, false);
+        })();
+    </script>
+
+    <script>
+        // Flags a frozen header while it is actually pinned, so the drop shadow
+        // only shows when the row is floating over the data.
+        //
+        // Sticky sits on the th cells — collapsed borders leave the tr unable to
+        // hold it — so the tr keeps its natural position throughout and its top
+        // is a straight read of whether the header has pinned. Measuring on
+        // scroll rather than with an IntersectionObserver because the interesting
+        // transitions (header grazing either edge of the viewport, table running
+        // out from under a pinned header) all happen at partial intersection,
+        // where no threshold is crossed and no observer callback would fire.
+        (function() {
+            const heads = Array.from(document.querySelectorAll('table.sticky-head'))
+                .map(function(table) {
+                    return { table: table, head: table.querySelector('thead'),
+                             row: table.querySelector('thead tr') };
+                })
+                .filter(function(h) { return h.head && h.row; });
+            if (!heads.length) return;
+
+            let queued = false;
+            function update() {
+                queued = false;
+                heads.forEach(function(h) {
+                    const row = h.row.getBoundingClientRect();
+                    // Second test: once the table runs out, sticky sets the header
+                    // down at its bottom edge, and a shadow there would be a lie.
+                    h.head.classList.toggle('is-stuck',
+                        row.top <= 0 && h.table.getBoundingClientRect().bottom > row.height);
+                });
+            }
+            function schedule() {
+                if (queued) return;
+                queued = true;
+                requestAnimationFrame(update);
+            }
+            window.addEventListener('scroll', schedule, { passive: true });
+            window.addEventListener('resize', schedule);
+            update();
         })();
     </script>
 
