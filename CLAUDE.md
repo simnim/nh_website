@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Everything runs through [uv](https://docs.astral.sh/uv/) (Python 3.13).
+Everything runs through [uv](https://docs.astral.sh/uv/) (Python 3.14).
 
 ```bash
 ./scripts/dev.sh                      # hot-reloading uvicorn on 127.0.0.1:5555 (HOST/PORT env vars override)
