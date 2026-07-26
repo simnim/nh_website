@@ -12,5 +12,4 @@ INNER JOIN basics ON episode.tconst = basics.tconst
 WHERE episode.parenttconst = :imdb_show_id
 GROUP BY episode.seasonnumber
 ORDER BY
-    average_percentile DESC;
---, episode.seasonNumber
+    episode.seasonnumber ASC NULLS LAST;

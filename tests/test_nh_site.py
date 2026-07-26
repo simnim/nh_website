@@ -402,3 +402,97 @@ def test_top_episodes_header_freezes_while_scrolling(
     driver.execute_script("window.scrollTo(0, 0);")
     wait.until(lambda d: not d.execute_script(_HEADER_PROBE)["stuck"])
     assert driver.execute_script(_HEADER_PROBE)["thTop"] > 0
+
+
+# State of the hide-below-cutoff toggle. offsetParent is null for a
+# display:none row, so `visible` is what the reader actually sees rather than
+# what the class names claim.
+_TOGGLE_PROBE = """
+    const table = document.getElementById('episodes-table');
+    const btn = document.getElementById('toggle-below');
+    const rows = Array.from(table.querySelectorAll('tbody tr[data-percentile]'));
+    return {
+        hiding: table.classList.contains('hide-below'),
+        label: btn ? btn.textContent : null,
+        pressed: btn ? btn.getAttribute('aria-pressed') : null,
+        total: rows.length,
+        below: rows.filter(r => r.classList.contains('below-cutoff')).length,
+        visible: rows.filter(r => r.offsetParent !== null).length,
+    };
+"""
+
+
+def test_top_episodes_hide_below_cutoff(app_server, browser):
+    """
+    The button and the h shortcut collapse the table to the top episodes.
+
+    Nothing is persisted, so every load starts with the whole show visible.
+    """
+    driver = browser()
+    wait = WebDriverWait(driver, timeout=20)
+    driver.get(f"{app_server}/episodes/tt0112178/20")
+    wait.until(EC.presence_of_element_located((By.ID, "episodes-table")))
+    body = driver.find_element(By.TAG_NAME, "body")
+
+    before = driver.execute_script(_TOGGLE_PROBE)
+    assert before["below"] > 0, "20% cutoff should leave something to hide"
+    assert not before["hiding"] and before["pressed"] == "false"
+    assert before["visible"] == before["total"], "a fresh load shows every episode"
+    assert before["label"] == f"Hide {before['below']} episodes below the cutoff"
+
+    top_count = before["total"] - before["below"]
+
+    driver.find_element(By.ID, "toggle-below").click()
+    hidden = driver.execute_script(_TOGGLE_PROBE)
+    assert hidden["hiding"] and hidden["pressed"] == "true"
+    assert hidden["visible"] == top_count
+    assert hidden["label"] == f"Show all {before['total']} episodes"
+
+    driver.find_element(By.ID, "toggle-below").click()
+    assert driver.execute_script(_TOGGLE_PROBE)["visible"] == before["total"]
+
+    # Same toggle from the keyboard.
+    body.send_keys("h")
+    assert driver.execute_script(_TOGGLE_PROBE)["visible"] == top_count
+    body.send_keys("h")
+    assert driver.execute_script(_TOGGLE_PROBE)["visible"] == before["total"]
+
+    # Typing a show name with an h in it must not collapse the table.
+    box = driver.find_element(By.NAME, "imdb_show_id")
+    box.clear()
+    box.send_keys("h")
+    assert not driver.execute_script(_TOGGLE_PROBE)["hiding"]
+    assert box.get_attribute("value") == "h"
+
+    # Marking a below-cutoff episode and then hiding keeps the marker on the
+    # row — it comes back where it was — and n still steps to the next top one.
+    marked = driver.execute_script("""
+        const row = document.querySelector('#episodes-table tbody tr.below-cutoff');
+        row.click();
+        return row.id;
+        """)
+    body.send_keys("h")
+    assert driver.execute_script("""
+        const row = document.querySelector('#episodes-table tbody tr.current-episode');
+        return row.classList.contains('below-cutoff') && row.offsetParent === null;
+        """), "the marked row is hidden but still marked"
+    body.send_keys("n")
+    stepped = driver.execute_script("""
+        const row = document.querySelector('#episodes-table tbody tr.current-episode');
+        return {id: row.id, visible: row.offsetParent !== null};
+        """)
+    assert stepped["id"] != marked and stepped["visible"]
+
+
+def test_top_episodes_hide_toggle_absent_with_nothing_to_hide(app_server, browser):
+    "At 100% every episode is a top episode, so a hide button would be a lie."
+    driver = browser()
+    wait = WebDriverWait(driver, timeout=20)
+    driver.get(f"{app_server}/episodes/tt0112178/100")
+    wait.until(EC.presence_of_element_located((By.ID, "episodes-table")))
+
+    probe = driver.execute_script(_TOGGLE_PROBE)
+    assert probe["below"] == 0 and probe["label"] is None
+
+    driver.find_element(By.TAG_NAME, "body").send_keys("h")
+    assert not driver.execute_script(_TOGGLE_PROBE)["hiding"], "h is a no-op here"

@@ -132,6 +132,11 @@
         /* Rows are hash targets, so a fresh load jumps one to y=0 — under the
            frozen header without this. */
         #episodes-table tbody tr { scroll-margin-top: 4rem; }
+
+        /* Collapses the table to the top episodes. One class on the table
+           rather than per-row styles, so unhiding restores each row to
+           whatever it was without having to remember it. */
+        #episodes-table.hide-below tbody tr.below-cutoff { display: none; }
     </style>
 
     <hr>
@@ -200,8 +205,13 @@
     <hr>
     <p class="text-muted small mb-2">
         Click an episode to mark your place — then press <kbd>n</kbd> / <kbd>p</kbd>
-        to step through the top episodes, <kbd>Esc</kbd> to clear.
+        to step through the top episodes, <kbd>Esc</kbd> to clear,
+        <kbd>h</kbd> to hide the rest.
     </p>
+    {# Label is written by the script below the table, so it can carry the row
+       count and the current state. #}
+    <button type="button" id="toggle-below" class="btn btn-sm btn-outline-secondary mb-2"
+            aria-pressed="false" aria-controls="episodes-table"></button>
     <table id="episodes-table" data-threshold="{{ 100 - max_rank_pct }}" class="table table-hover table-sm table-striped table-bordered sticky-head">
         <thead>
             <tr>
@@ -279,6 +289,9 @@
                 const pct = parseFloat(row.dataset.percentile);
                 let r, g, b;
                 if (pct < threshold) {
+                    // Same test that picks the red wash, so the hide toggle can
+                    // never disagree with what the colours show.
+                    row.classList.add('below-cutoff');
                     const t = threshold > 0 ? pct / threshold : 0;
                     r = 255;
                     g = Math.round(190 + (255 - 190) * t);
@@ -323,6 +336,40 @@
                 if (target) setCurrent(target, true);
             }
 
+            // Collapses the table to the top episodes and back. The marker is
+            // deliberately left alone: losing your place because you tidied the
+            // view would be worse than it being briefly off screen, and step()
+            // compares positions through `order`, which covers hidden rows too.
+            const belowRows = rows.filter(function(row) {
+                return row.classList.contains('below-cutoff');
+            });
+            const toggleBtn = document.getElementById('toggle-below');
+
+            function renderToggle() {
+                const hidden = table.classList.contains('hide-below');
+                toggleBtn.textContent = hidden
+                    ? 'Show all ' + rows.length + ' episodes'
+                    : 'Hide ' + belowRows.length + ' episodes below the cutoff';
+                toggleBtn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+            }
+
+            function toggleBelow() {
+                table.classList.toggle('hide-below');
+                renderToggle();
+                // The frozen-header script is its own IIFE and only recomputes on
+                // scroll/resize; the table just changed height under it.
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            if (belowRows.length) {
+                toggleBtn.addEventListener('click', toggleBelow);
+                renderToggle();
+            } else {
+                // At 100% nothing is below the cutoff, and a button that hides
+                // nothing is a lie.
+                toggleBtn.remove();
+            }
+
             document.addEventListener('keydown', function(e) {
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
                 // The show search box is a jQuery UI autocomplete: typing a show
@@ -332,6 +379,7 @@
                 const k = e.key.toLowerCase();
                 if (k === 'n') { e.preventDefault(); step(1); }
                 else if (k === 'p') { e.preventDefault(); step(-1); }
+                else if (k === 'h' && belowRows.length) { e.preventDefault(); toggleBelow(); }
                 else if (e.key === 'Escape' && current) { setCurrent(null, true); }
             });
 
