@@ -376,6 +376,66 @@ def test_n_and_p_step_through_top_episodes_only(app_server, browser):
     assert driver.execute_script(_MARKER_PROBE)["id"] == top_ids[-1]
 
 
+def test_f_jumps_to_the_first_top_episode(app_server, browser):
+    driver, _wait = open_show(browser, app_server)
+    body = driver.find_element(By.TAG_NAME, "body")
+    top_ids = driver.execute_script(_TOP_ROW_IDS)
+    assert len(top_ids) > 3, "fixture show should have several top episodes"
+
+    driver.find_element(By.ID, top_ids[3]).click()
+    body.send_keys("f")
+    jumped = driver.execute_script(_MARKER_PROBE)
+    assert jumped["id"] == top_ids[0] and jumped["hash"] == f"#{top_ids[0]}"
+
+    # f at the first top episode stays put rather than wrapping or clearing.
+    body.send_keys("f")
+    assert driver.execute_script(_MARKER_PROBE)["id"] == top_ids[0]
+
+
+def test_u_walks_back_through_marker_history(app_server, browser):
+    "p walks up the table; u walks back through where you have been."
+    driver, _wait = open_show(browser, app_server)
+    body = driver.find_element(By.TAG_NAME, "body")
+    top_ids = driver.execute_script(_TOP_ROW_IDS)
+
+    driver.find_element(By.ID, top_ids[2]).click()
+    body.send_keys("n")
+    stepped = driver.execute_script(_MARKER_PROBE)["id"]
+    assert stepped == top_ids[3]
+    # Scripted click: the marker has scrolled the page, and the frozen header
+    # sits over the first row where a real click would land.
+    driver.execute_script("document.getElementById(arguments[0]).click();", top_ids[0])
+
+    for expected in (stepped, top_ids[2]):
+        body.send_keys("u")
+        state = driver.execute_script(_MARKER_PROBE)
+        assert state["id"] == expected and state["hash"] == f"#{expected}"
+
+    # The bottom of the stack is "nothing was marked", which is a real place.
+    body.send_keys("u")
+    empty = driver.execute_script(_MARKER_PROBE)
+    assert empty["marked"] == 0 and empty["hash"] == ""
+
+    # ...and undoing past that is a no-op, not an error.
+    body.send_keys("u")
+    assert driver.execute_script(_MARKER_PROBE)["marked"] == 0
+
+
+def test_u_undoes_an_escape(app_server, browser):
+    "The case p cannot cover: getting your cleared marker back."
+    driver, _wait = open_show(browser, app_server)
+    body = driver.find_element(By.TAG_NAME, "body")
+    marked = driver.execute_script(_TOP_ROW_IDS)[2]
+
+    driver.find_element(By.ID, marked).click()
+    body.send_keys(Keys.ESCAPE)
+    assert driver.execute_script(_MARKER_PROBE)["marked"] == 0
+
+    body.send_keys("u")
+    restored = driver.execute_script(_MARKER_PROBE)
+    assert restored["id"] == marked and restored["hash"] == f"#{marked}"
+
+
 def test_escape_clears_the_marker_and_the_hash(app_server, browser):
     driver, _wait = open_show(browser, app_server)
     body = driver.find_element(By.TAG_NAME, "body")
@@ -389,9 +449,9 @@ def test_escape_clears_the_marker_and_the_hash(app_server, browser):
     assert SHOW in driver.current_url
 
 
-@pytest.mark.parametrize("key", ["n", "p", "h"])
+@pytest.mark.parametrize("key", ["n", "p", "h", "f", "u"])
 def test_shortcuts_do_not_fire_while_typing_in_the_search_box(app_server, browser, key):
-    "Show names have n, p and h in them."
+    "Show names have n, p, h, f and u in them."
     driver, _wait = open_show(browser, app_server)
     box = driver.find_element(By.NAME, "imdb_show_id")
     box.clear()
