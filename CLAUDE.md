@@ -28,8 +28,11 @@ Four layers, and they are meant to be kept in step:
   future one-line edit (a `|safe`, an f-string in a query, a `path:` converter). It uses the
   synthetic databases, so it runs in the `-m "not browser"` suite.
 * **`.github/workflows/ci.yml`** — the enforcement point, since pre-commit is bypassable with
-  `--no-verify`. Runs the fast suite, `pre-commit run --all-files`, and `pip-audit` on every
-  push and PR plus weekly. Actions are pinned to commit shas; dependabot keeps the pins fresh.
+  `--no-verify`. Runs the fast suite, the selenium suite, `pre-commit run --all-files`, and
+  `pip-audit` on every push and PR plus weekly, as four parallel jobs. Actions are pinned to
+  commit shas; dependabot keeps the pins fresh. The `browser` job uses the chrome and
+  chromedriver already on the `ubuntu-latest` image and sets `NH_WEBSITE_REQUIRE_BROWSER=1`,
+  without which a runner missing either would skip the whole suite and still report green.
 * **ruff `S`** (flake8-bandit) in `[tool.ruff.lint]` — the static security lint, riding along
   in a tool the toolchain already had. `tests/*` ignores S101 because pytest is built on
   `assert`; the two S603/S607 suppressions in `tests/conftest.py` are at the call site with
@@ -86,6 +89,9 @@ still renders the search page — old links go stale because the weekly rebuild 
 * `browser` + `app_server` — headless selenium against a real uvicorn on an OS-assigned port
   (`@pytest.mark.browser`). Skips when no chromedriver/geckodriver is on PATH — Selenium Manager
   cannot provision drivers on linux/aarch64, which is this site's usual home (a Raspberry Pi).
+  That skip, and the two for a missing jquery cdn and console log, all go through
+  `skip_or_fail()`, which fails instead when `NH_WEBSITE_REQUIRE_BROWSER=1` — set only by CI,
+  where a missing browser is a broken runner rather than a fact about the machine.
 * `cat_conn` / `tv_conn` / `books_conn` — the real databases (`@pytest.mark.realdata`), skipped when
   not populated. Only for asserting things about the real data itself.
 

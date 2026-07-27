@@ -47,6 +47,18 @@ MOBILE_UA = (
 MOBILE_SIZE = (390, 844)
 DESKTOP_SIZE = (1280, 900)
 
+# CI sets this. Every browser skip is a fact about a dev box — no chromedriver on
+# aarch64, no network for the cdn — and a lie on a runner that is supposed to
+# have both. There, a skipped browser suite is a green job that tested nothing.
+REQUIRE_BROWSER = os.environ.get("NH_WEBSITE_REQUIRE_BROWSER") == "1"
+
+
+def skip_or_fail(reason):
+    "Skip locally, fail where the environment was promised."
+    if REQUIRE_BROWSER:
+        pytest.fail(reason)
+    pytest.skip(reason)
+
 
 @pytest.fixture(scope="session")
 def fixture_data_dir(tmp_path_factory):
@@ -266,7 +278,7 @@ def _make_driver(user_agent=None):
     else:
         problems.append("firefox: no geckodriver on PATH")
 
-    pytest.skip("no usable webdriver — " + "; ".join(problems))
+    skip_or_fail("no usable webdriver — " + "; ".join(problems))
 
 
 @pytest.fixture

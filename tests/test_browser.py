@@ -10,7 +10,7 @@ import re
 
 import fixture_data
 import pytest
-from conftest import MOBILE_SIZE, MOBILE_UA
+from conftest import MOBILE_SIZE, MOBILE_UA, skip_or_fail
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -38,7 +38,7 @@ def require_jquery(driver):
     nothing to test rather than something to fail.
     """
     if driver.execute_script("return typeof window.jQuery") == "undefined":
-        pytest.skip("jquery did not load — no network for the cdn")
+        skip_or_fail("jquery did not load — no network for the cdn")
 
 
 def test_search_finds_a_show_and_renders_its_episodes(app_server, browser):
@@ -634,7 +634,7 @@ def test_episode_page_has_no_javascript_errors(app_server, browser):
     try:
         entries = driver.get_log("browser")
     except WebDriverException:
-        pytest.skip("this browser does not expose a console log")
+        skip_or_fail("this browser does not expose a console log")
     severe = [
         entry
         for entry in entries
