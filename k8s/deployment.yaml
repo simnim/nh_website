@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nh-website
+  labels:
+    app: nh-website
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nh-website
+  template:
+    metadata:
+      labels:
+        app: nh-website
+    spec:
+      containers:
+        - name: nh-website
+          image: nh-website:latest
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            # All three SQLite DBs live together under this one directory:
+            #   /home/appuser/.nh-website-data/{top_cat.db, imdb.db, top-books.db}
+            - name: data
+              mountPath: /home/appuser/.nh-website-data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nh-website-data

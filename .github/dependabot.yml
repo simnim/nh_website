@@ -1,0 +1,15 @@
+version: 2
+
+# The workflow pins every action to a commit sha, which is the safe thing but
+# also the thing that silently rots. These two keep the pins and the lockfile
+# moving without anyone having to remember.
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

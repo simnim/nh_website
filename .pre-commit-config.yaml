@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -18,21 +18,29 @@ repos:
     -   id: fix-byte-order-marker
     -   id: mixed-line-ending
     -   id: trailing-whitespace
--   repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
     hooks:
-    -   id: isort
-        additional_dependencies: ["toml", "pyproject"]
+    - id: ruff-check
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
 -   repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.5.1
     hooks:
     -   id: black
--   repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
+        # Reformat and stage the result, so the hook passes instead of failing
+        # the run. pre-commit decides pass/fail from the unstaged diff, so a
+        # hook that stages what it changed leaves that diff untouched.
+        entry: bash -c 'black "$@" && git add -- "$@"' --
+-   repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
     hooks:
-    - id: flake8
+    # detect-private-key above only matches PEM blocks. This is the one that
+    # catches an api key, a token or a connection string.
+    -   id: gitleaks
 - repo: https://github.com/sqlfluff/sqlfluff
-  rev: 3.3.0
+  rev: 4.2.2
   hooks:
     - id: sqlfluff-lint
       args: [--dialect, sqlite]

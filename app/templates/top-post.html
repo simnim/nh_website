@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container bg-light rounded pt-3">
+         Fully automated. All posts come from <a href="https://www.reddit.com/r/aww/">reddit aww</a> and are filtered for "{{ label }}" using <a href="https://colab.research.google.com/github/tensorflow/models/blob/master/research/deeplab/deeplab_demo.ipynb">AI</a> on my <a href="https://www.raspberrypi.org/products/raspberry-pi-4-model-b/">tiny linux computer.</a>
+</div>
+<hr>
+{% for post in posts %}
+    <div class="container bg-light rounded pt-3">
+        <div class="row">
+            <div class="col-md-11">Noticed @ {{ post.noticed_at }}</div>
+            <a  class="btn btn-outline-secondary col-md-1"
+                href="/permalink/{{ post.media_hash }}/{{ post.noticed_at }}"
+                > Permalink
+            </a>
+        </div>
+        <h3> {{ post.title }} </h3>
+        {% if post.type == 'video' %}
+            <video class="mx-auto d-block mw-100" controls>
+                <source src="{{ post.media }}" type="video/mp4" >
+            </video>
+        {% else %}
+            <img src="{{ post.media }}" alt="{{ post.title }}" class="mx-auto d-block mw-100">
+        {% endif %}
+    </div>
+    <hr>
+{% endfor %}
+<script type="module" src="/static/fixAudio.js"></script>
+{% endblock %}

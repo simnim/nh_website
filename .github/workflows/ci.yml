@@ -1,0 +1,58 @@
+name: CI
+
+# Nothing enforced the test suite or the linters before this: pre-commit is
+# local-only and `git commit --no-verify` skips it. The weekly schedule is
+# deliberate — a cve lands in a locked dependency on its own timetable, not on
+# the days somebody happens to push.
+on:
+  push:
+  pull_request:
+  schedule:
+    # 06:17 UTC on Mondays. Off the hour, because every job on the hour queues.
+    - cron: "17 6 * * 1"
+
+# Least privilege by default. A job that needs more should ask for it itself.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      # `not realdata`: ~/.nh-website-data
+      # does not exist on a runner, and never will. Everything else must pass.
+      - env:
+          NH_WEBSITE_REQUIRE_BROWSER: "1"
+        run: uv run pytest -m "not realdata"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # gitleaks scans history, and a shallow clone hides it.
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      # ruff (incl. the S/flake8-bandit rules), black, sqlfluff and gitleaks.
+      # This is the backstop for a --no-verify commit.
+      - run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      # Audits the resolved lockfile rather than the loose `>=` floors in
+      # pyproject.toml, so this reports what would actually be installed.
+      # pip-audit rejects hashes in a requirements file, hence --no-hashes.
+      - run: uv export --frozen --all-groups --no-emit-project --no-hashes -o requirements.txt
+      - run: uvx pip-audit --requirement requirements.txt

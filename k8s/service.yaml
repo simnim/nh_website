@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nh-website
+  labels:
+    app: nh-website
+spec:
+  selector:
+    app: nh-website
+  ports:
+    - port: 80
+      targetPort: 8000

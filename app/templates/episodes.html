@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    .search-help-hint { position: relative; }
+    .search-help-hint::after {
+      content: "Filtered by your search words, sorted by popularity";
+      display: none;
+      position: absolute;
+      left: 1.2em;
+      top: -0.3em;
+      background: #333;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .search-help-hint:hover::after { display: block; }
+  </style>
+  <div class="container bg-light rounded pt-3">
+    <form action="" method="post" novalidate>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="imdb_show_id">Show Name Search (or IMDb show ID)
+                <span class="search-help-hint" data-toggle="modal" data-target="#searchHelpModal" style="cursor:pointer;">🤔</span>
+              </label> <br>
+              <input type="text" name="imdb_show_id" id="imdb_show_id" class="autocomplete w-100" placeholder="type your search query here" value="{{ show_meta.label if imdb_show_id else '' }}">
+              <input type="submit" name="submit" class="btn btn-primary mt-2 w-100" value="Show the best episodes">
+            </div>
+            <div class="form-group col-md-6">
+              <label for="max_rank_pct">Show top __% percent (below)</label> <br>
+              <div class="d-flex align-items-center">
+                <input type="range" id="max_rank_pct_slider" min="1" max="100" value="{{ max_rank_pct or 20 }}" style="flex:1;">
+                <input type="number" name="max_rank_pct" id="max_rank_pct" min="1" max="100" style="width:4em;" class="ml-2" value="{{ max_rank_pct or '' }}">
+              </div>
+              <div class="btn-group mt-1 w-100">
+                {% for val in [5, 10, 20, 50, 80, 100] %}
+                  <button type="button" class="btn btn-sm btn-outline-secondary pct-preset" data-value="{{ val }}">{{ val }}%</button>
+                {% endfor %}
+              </div>
+            </div>
+        </div>
+    </form>
+    <script>
+        $( document ).ready(function() {
+            $( ".autocomplete" ).autocomplete({
+                source: '/search'
+            });
+            var slider = document.getElementById('max_rank_pct_slider');
+            var number = document.getElementById('max_rank_pct');
+            var imdbShowId = {{ (imdb_show_id or '') | tojson }};
+            function navigateToPct(v) {
+                if (imdbShowId) window.location.href = '/episodes/' + imdbShowId + '/' + v + window.location.hash;
+            }
+            slider.addEventListener('input', function() { number.value = slider.value; });
+            slider.addEventListener('change', function() { navigateToPct(slider.value); });
+            number.addEventListener('input', function() { slider.value = number.value; });
+
+            // Searching for a different show has to drop the episode marker.
+            // Row ids are s<season>e<episode>, which mean a different episode on
+            // every show, and the hash rides along by itself: the form posts to
+            // the current url, fragment included, and a browser copies that
+            // fragment onto the target of the 303 that comes back. So the new
+            // show would open with someone else's place marked.
+            //
+            // Only when the show actually changed — submitting is also how a
+            // typed cutoff is applied, and that is the same show, where keeping
+            // the marker is the point (as with the slider above).
+            var showInput = document.getElementById('imdb_show_id');
+            var initialShow = showInput.value;
+            if (showInput.form) {
+                showInput.form.addEventListener('submit', function() {
+                    if (location.hash && showInput.value !== initialShow) {
+                        history.replaceState(null, '', location.pathname + location.search);
+                    }
+                });
+            }
+            document.querySelectorAll('.pct-preset').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var v = this.dataset.value;
+                    slider.value = v;
+                    number.value = v;
+                    navigateToPct(v);
+                });
+            });
+        });
+    </script>
+
+  {% if imdb_show_id is not none %}
+
+    <style>
+        .table td, .table th { border: 1px solid #999 !important; }
+
+        #episodes-table tbody tr { cursor: pointer; }
+
+        /* Bootstrap's .table is border-collapse: collapse, so the marker
+           border has to go on the cells, not the row. */
+        #episodes-table tbody tr.current-episode > td {
+            border-top: 4px solid #007bff !important;
+            border-bottom: 4px solid #007bff !important;
+        }
+        #episodes-table tbody tr.current-episode > td:first-child { border-left: 4px solid #007bff !important; }
+        #episodes-table tbody tr.current-episode > td:last-child { border-right: 4px solid #007bff !important; }
+
+        /* Percentile bar. The cell opts out of the row's red/green wash (the
+           script below sets that on the <tr>, so a <td> background simply
+           wins) — every track then sits on the same neutral plane and bars
+           stay comparable row to row. */
+        .pct-cell   { background-color: #fcfcfb; width: 120px; padding: 0 6px !important;
+                      vertical-align: middle; }
+        .pct-track  { position: relative; height: 12px; background-color: #e1e0d9;
+                      border-radius: 4px; }
+        /* min-width keeps percentile 0 — a real value, the show's worst
+           episode — from rendering as an empty cell. */
+        .pct-fill   { height: 100%; min-width: 2px; background-color: #6c757d;
+                      border-radius: 0 4px 4px 0; }
+        .pct-fill.is-top { background-color: #28a745; }
+        /* Cutoff marker. Overhangs the track top and bottom so the part
+           standing on the neutral cell stays legible even where a fill runs
+           underneath it. */
+        .pct-cutoff { position: absolute; top: -2px; bottom: -2px; left: 0;
+                      width: 1px; background-color: #52514e; }
+
+        /* Frozen header row, Excel style. Sticks to the top of the window while
+           its own table is on screen; a sticky element is bounded by its
+           containing block, so each header releases when its table scrolls past
+           and the two are never pinned at once. */
+        .sticky-head thead th {
+            position: sticky;
+            top: 0;
+            /* Over the tbody cell backgrounds and the current-episode borders. */
+            z-index: 2;
+            /* The header is transparent by default and shows the container's
+               .bg-light; once it detaches, the coloured rows would scroll
+               straight through it, so pin that colour down explicitly. */
+            background-color: #f8f9fa;
+            /* Collapsed borders are painted by the table, not the cell, so the
+               border rule above does not travel with a detached th — these
+               inset shadows redraw the four edges on the cell itself. */
+            box-shadow: inset 1px 1px 0 #999, inset -1px -1px 0 #999;
+        }
+        /* Only while stuck, so the row reads as floating over the data rather
+           than as a misaligned first row. One declaration: a second box-shadow
+           would replace the inset borders instead of adding to them. */
+        .sticky-head thead.is-stuck th {
+            box-shadow: inset 1px 1px 0 #999, inset -1px -1px 0 #999,
+                        0 3px 6px rgba(0, 0, 0, .18);
+        }
+        /* Rows are hash targets, so a fresh load jumps one to y=0 — under the
+           frozen header without this. */
+        #episodes-table tbody tr { scroll-margin-top: 4rem; }
+
+        /* Collapses the table to the top episodes. One class on the table
+           rather than per-row styles, so unhiding restores each row to
+           whatever it was without having to remember it. */
+        #episodes-table.hide-below tbody tr.below-cutoff { display: none; }
+    </style>
+
+    <hr>
+    <h2 id="show-meta">Show Metadata</h1>
+    <hr>
+    <div>
+        <table class="table table-sm table-bordered">
+            <tr> <td> Show Name </td> <td> {{ show_meta.primaryTitle }} </td> </tr>
+            <tr> <td> Start Year </td> <td> {{ show_meta.startYear }} </td> </tr>
+            <tr> <td> End Year </td> <td> {{ show_meta.endYear }} </td> </tr>
+            <tr> <td> Typical Runtime </td> <td> {{ show_meta.runtimeMinutes }} min</td> </tr>
+            <tr> <td> Genre tags </td> <td> {{ show_meta.genres }} </td> </tr>
+        </table>
+    </div>
+
+    <hr>
+    <h2 id="seasons">Top Seasons</h1>
+    <hr>
+    {# Pivot 50, not the top-N% cutoff: a season average sits near the middle by
+       construction (percentiles are uniform across the show), so the cutoff
+       would paint almost every season red. 50 is a real landmark — the average
+       season — and reads as "better/worse than this show's typical season".
+
+       Span 25 for the same reason. Averaging pulls seasons in hard: real shows
+       land in roughly 35-65, so a ramp reaching full strength only at 0 and 100
+       would wash every season the same pale yellow and say nothing. It is still
+       an absolute scale, so seasons stay comparable between shows — a show with
+       genuinely even seasons is meant to look flat. #}
+    <table id="seasons-table" data-threshold="50" data-wash-span="25" class="table table-hover table-sm table-striped table-bordered sticky-head">
+        <thead>
+            <tr>
+                {% if request.state.is_mobile %}
+                    <th> Season </th>
+                    <th> Avg(⭐) </th>
+                    <th class="text-center"> <small><strong> Avg(Episode Percentile) </strong></small> </th>
+                {% else %}
+                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
+                    <th> Season # </th>
+                    <th> Avg # Votes </th>
+                    <th> Average Rating </th>
+                    <th class="text-center"> Avg Percentile (100=best)</th>
+                    <th aria-label="Average percentile bar"></th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for season in seasons %}
+                <tr data-percentile="{{ season.average_percentile }}">
+                    {% if request.state.is_mobile %}
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                    {% else %}
+                        <!-- <td> {{ loop.index }}</td> -->
+                        <td> {{ season.seasonNumber }} </td>
+                        <td> {{ season.average_num_votes }} </td>
+                        <td> {{ season.average_rating }} </td>
+                        <td class="text-center"> {{ season.average_percentile }} </td>
+                        {# The bar stays neutral and gets no cutoff tick: a season
+                           carries no top/not-top classification, so either would
+                           imply one. Better-or-worse is what the row wash says. #}
+                        <td class="pct-cell">
+                            <div class="pct-track" title="Average percentile {{ season.average_percentile }} of 100">
+                                <div class="pct-fill" style="width: {{ season.average_percentile }}%"></div>
+                            </div>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <hr>
+    <h2 id="episodes">Top Episodes</h1>
+    <hr>
+    <p class="text-muted small mb-2">
+        Click an episode to mark your place — then press <kbd>n</kbd> / <kbd>p</kbd>
+        to step through the top episodes, <kbd>f</kbd> for the first,
+        <kbd>u</kbd> to undo, <kbd>Esc</kbd> to clear,
+        <kbd>h</kbd> to hide the rest.
+    </p>
+    {# Label is written by the script below the table, so it can carry the row
+       count and the current state. #}
+    <button type="button" id="toggle-below" class="btn btn-sm btn-outline-secondary mb-2"
+            aria-pressed="false" aria-controls="episodes-table"></button>
+    <table id="episodes-table" data-threshold="{{ 100 - max_rank_pct }}" class="table table-hover table-sm table-striped table-bordered sticky-head">
+        <thead>
+            <tr>
+                {% if request.state.is_mobile %}
+                    <!-- <th> Index<sub><sub>1</sub></sub> </th> -->
+                    <th> S </th>
+                    <th> Ep </th>
+                    <th> Title </th>
+                    <th> ⭐ </th>
+                    <!-- <th> Num Votes </th> -->
+                    <th class="text-center"> <small><strong>Top Percentile</strong></small> </th>
+                {% else %}
+                    <th> Index<sub><sub>1</sub></sub> </th>
+                    <th> Season # </th>
+                    <th> Episode # </th>
+                    <th> Title </th>
+                    <th> Average Rating </th>
+                    <th> Num Votes </th>
+                    <th class="text-center"> Top Percentile (100=best)</th>
+                    {# Doubles as the label for the cutoff tick on each bar. #}
+                    <th class="text-center"><small class="text-muted">cutoff = top {{ max_rank_pct }}%</small></th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for episode in episodes %}
+                {% set ep_id = ('s' ~ episode.seasonNumber ~ 'e' ~ episode.episodeNumber)
+                               if episode.seasonNumber is not none and episode.episodeNumber is not none
+                               else ('row' ~ loop.index) %}
+                <tr id="{{ ep_id }}" data-percentile="{{ episode.percentile|int }}">
+                    {% if request.state.is_mobile %}
+                        <!-- <td> {{ loop.index }}</td> -->
+                        <td> {{ episode.seasonNumber }} </td>
+                        <td> {{ episode.episodeNumber }} </td>
+                        <td> {{ episode.primaryTitle }} </td>
+                        <td> {{ episode.averageRating }} </td>
+                        <!-- <td> {{ episode.numVotes }} </td> -->
+                        <td class="text-center"> {{ episode.percentile|int }} </td>
+                    {% else %}
+                        <td> {{ loop.index }}</td>
+                        <td> {{ episode.seasonNumber }} </td>
+                        <td> {{ episode.episodeNumber }} </td>
+                        <td> {{ episode.primaryTitle }} </td>
+                        <td> {{ episode.averageRating }} </td>
+                        <td> {{ episode.numVotes }} </td>
+                        <td class="text-center"> {{ episode.percentile|int }} </td>
+                        {# Green/grey comes from the server's is_top_episode flag, so
+                           there is one source of truth and no flash of the wrong
+                           colour before the script below runs. #}
+                        <td class="pct-cell">
+                            <div class="pct-track" title="Percentile {{ episode.percentile|int }} of 100{{ ' — top episode' if episode.is_top_episode else '' }}">
+                                <div class="pct-fill{{ ' is-top' if episode.is_top_episode else '' }}"
+                                     style="width: {{ episode.percentile|int }}%"></div>
+                                <div class="pct-cutoff" style="left: {{ 100 - max_rank_pct }}%"></div>
+                            </div>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        // Red/green row wash, shared by both tables. A row's percentile is placed
+        // against its table's `data-threshold`: at the threshold the wash is at
+        // its palest, and it deepens towards red going down and green going up,
+        // so the two halves meet in the same colour and the ramp is continuous.
+        //
+        // What the threshold means is the table's business — the top-N% cutoff
+        // for episodes, an average season for seasons — but the pale band always
+        // marks it, so the same colour means the same thing in both.
+        //
+        // `data-wash-span` is how far from the threshold the wash takes to reach
+        // full strength, beyond which it clamps. Without it the ramp stretches to
+        // whichever end of the scale it is heading for, which is right for
+        // episode percentiles because they really do fill 0..100. Season
+        // averages do not, so the seasons table asks for a shorter span; see the
+        // note on that table.
+        (function() {
+            document.querySelectorAll('table[data-threshold]').forEach(function(table) {
+                const threshold = parseFloat(table.dataset.threshold);
+                const span = parseFloat(table.dataset.washSpan);
+                table.querySelectorAll('tbody tr[data-percentile]').forEach(function(row) {
+                    const pct = parseFloat(row.dataset.percentile);
+                    // A season with no rated episodes has no percentile to show;
+                    // leave the row alone rather than washing it NaN-coloured.
+                    if (!isFinite(pct)) return;
+                    const below = pct < threshold;
+                    const reach = isFinite(span) ? span : (below ? threshold : 100 - threshold);
+                    // 0 at the threshold, 1 at full strength.
+                    const t = reach > 0 ? Math.min(Math.abs(pct - threshold) / reach, 1) : 1;
+                    const r = below ? 255 : Math.round(255 - (255 - 190) * t);
+                    const g = below ? Math.round(255 - (255 - 190) * t) : Math.round(255 - (255 - 245) * t);
+                    const b = Math.round(215 - (215 - 190) * t);
+                    row.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        (function() {
+            const table = document.getElementById('episodes-table');
+            if (!table) return;
+            const threshold = parseFloat(table.dataset.threshold);
+            const rows = Array.from(table.querySelectorAll('tbody tr[data-percentile]'));
+            const order = new Map(rows.map(function(row, i) { return [row, i]; }));
+            // The top episodes are exactly the rows the wash above colours green,
+            // so the marker never lands somewhere the colouring disagrees with.
+            // The >= boundary matches the SQL is_top_episode flag that colours the
+            // percentile bars, so the wash, the bars and this nav all agree — and
+            // it is the same test that splits the wash, so the hide toggle can
+            // never disagree with what the colours show.
+            const topRows = [];
+            rows.forEach(function(row) {
+                if (parseFloat(row.dataset.percentile) < threshold) {
+                    row.classList.add('below-cutoff');
+                } else {
+                    topRows.push(row);
+                }
+            });
+
+            // Current-episode marker. Position lives in the URL hash so it
+            // survives closing the browser.
+            let current = null;
+
+            function setCurrent(row, updateUrl) {
+                if (current) current.classList.remove('current-episode');
+                current = row;
+                if (row) row.classList.add('current-episode');
+                if (updateUrl) {
+                    history.replaceState(null, '',
+                        location.pathname + location.search + (row ? '#' + row.id : ''));
+                }
+                if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
+
+            // Where the marker has been, so undo can walk back through clicks and
+            // steps alike — p walks up the table, which is a different question.
+            // Every move a reader makes goes through goTo(); setCurrent() stays the
+            // primitive, for the two moves that are not undoable history: the undo
+            // itself, and the hash restore on load.
+            const past = [];
+
+            function goTo(row, updateUrl) {
+                if (row === current) return;  // re-clicking your own row is not a move
+                past.push(current);           // null is a real entry: nothing was marked
+                setCurrent(row, updateUrl);
+            }
+
+            function undo() {
+                if (past.length) setCurrent(past.pop(), true);
+            }
+
+            function first() {
+                if (topRows.length) goTo(topRows[0], true);
+            }
+
+            rows.forEach(function(row) {
+                row.addEventListener('click', function() { goTo(row, true); });
+            });
+
+            // Steps between top episodes only, skipping the rest. Stops at the ends.
+            function step(dir) {
+                if (!topRows.length) return;
+                if (!current) { goTo(topRows[0], true); return; }
+                const pos = order.get(current);
+                const target = dir > 0
+                    ? topRows.find(function(row) { return order.get(row) > pos; })
+                    : topRows.filter(function(row) { return order.get(row) < pos; }).pop();
+                if (target) goTo(target, true);
+            }
+
+            // Collapses the table to the top episodes and back. The marker is
+            // deliberately left alone: losing your place because you tidied the
+            // view would be worse than it being briefly off screen, and step()
+            // compares positions through `order`, which covers hidden rows too.
+            const belowRows = rows.filter(function(row) {
+                return row.classList.contains('below-cutoff');
+            });
+            const toggleBtn = document.getElementById('toggle-below');
+
+            function renderToggle() {
+                const hidden = table.classList.contains('hide-below');
+                toggleBtn.textContent = hidden
+                    ? 'Show all ' + rows.length + ' episodes'
+                    : 'Hide ' + belowRows.length + ' episodes below the cutoff';
+                toggleBtn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+            }
+
+            function toggleBelow() {
+                table.classList.toggle('hide-below');
+                renderToggle();
+                // The frozen-header script is its own IIFE and only recomputes on
+                // scroll/resize; the table just changed height under it.
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            if (belowRows.length) {
+                toggleBtn.addEventListener('click', toggleBelow);
+                renderToggle();
+            } else {
+                // At 100% nothing is below the cutoff, and a button that hides
+                // nothing is a lie.
+                toggleBtn.remove();
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                // The show search box is a jQuery UI autocomplete: typing a show
+                // name with an n or p in it must not move the marker.
+                const t = e.target;
+                if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+                const k = e.key.toLowerCase();
+                if (k === 'n') { e.preventDefault(); step(1); }
+                else if (k === 'p') { e.preventDefault(); step(-1); }
+                else if (k === 'f') { e.preventDefault(); first(); }
+                else if (k === 'u') { e.preventDefault(); undo(); }
+                else if (k === 'h' && belowRows.length) { e.preventDefault(); toggleBelow(); }
+                else if (e.key === 'Escape' && current) { goTo(null, true); }
+            });
+
+            const initial = location.hash
+                && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+            if (initial && order.has(initial)) setCurrent(initial, false);
+        })();
+    </script>
+
+    <script>
+        // Flags a frozen header while it is actually pinned, so the drop shadow
+        // only shows when the row is floating over the data.
+        //
+        // Sticky sits on the th cells — collapsed borders leave the tr unable to
+        // hold it — so the tr keeps its natural position throughout and its top
+        // is a straight read of whether the header has pinned. Measuring on
+        // scroll rather than with an IntersectionObserver because the interesting
+        // transitions (header grazing either edge of the viewport, table running
+        // out from under a pinned header) all happen at partial intersection,
+        // where no threshold is crossed and no observer callback would fire.
+        (function() {
+            const heads = Array.from(document.querySelectorAll('table.sticky-head'))
+                .map(function(table) {
+                    return { table: table, head: table.querySelector('thead'),
+                             row: table.querySelector('thead tr') };
+                })
+                .filter(function(h) { return h.head && h.row; });
+            if (!heads.length) return;
+
+            let queued = false;
+            function update() {
+                queued = false;
+                heads.forEach(function(h) {
+                    const row = h.row.getBoundingClientRect();
+                    // Second test: once the table runs out, sticky sets the header
+                    // down at its bottom edge, and a shadow there would be a lie.
+                    h.head.classList.toggle('is-stuck',
+                        row.top <= 0 && h.table.getBoundingClientRect().bottom > row.height);
+                });
+            }
+            function schedule() {
+                if (queued) return;
+                queued = true;
+                requestAnimationFrame(update);
+            }
+            window.addEventListener('scroll', schedule, { passive: true });
+            window.addEventListener('resize', schedule);
+            update();
+        })();
+    </script>
+
+
+
+  {% else %}
+
+
+
+    <hr>
+    <div class="container px-5">
+        {% if not_found %}
+          {# Reached by url only — the search box never produces an unknown id. #}
+          <div class="alert alert-warning" id="show-not-found" role="alert">
+            No show found for <strong>{{ not_found }}</strong>. Try the search box above.
+          </div>
+        {% endif %}
+        <p> Hello and welcome to Top Episodes. </p>
+        <p> To look for your favorite show use the search box above and click "Show the best episodes" </p>
+        <p> This page applies the <a href="https://en.wikipedia.org/wiki/Pareto_principle">Pareto principle</a> to TV series so you can get 4 times more <a href="https://en.wiktionary.org/wiki/util">utils</a> for your time. </p>
+        <p> Essentially, by watching just the top 20% of episodes, you get 80% of the value of the whole series. This means in the same amount of time you can watch 5x more series getting 80% of the value of each, which maths to 4x the bang for your buck 🤓</p>
+        <p> If a show does not sound super exciting but your friends love it, might as well start with the top 5% and expand to 20% if you felt like you enjoyed the 5%. Some cult classics might only have a few good ones (at least in your opinion) so 1% might be all that's worth watching to start, but you can at least say you gave it a shot. </p>
+        <p> Of course this does not apply to every TV show, but it works for most. Some shows require you to watch every episode to understand the story. For those you might want to filter out only a handful of episodes or none at all (keep 80% to 100%). </p>
+        <p> To get started with a list of sci-fi favorites recommended by the #1 biggest sci-fi fan I know check out the following: </p>
+        <ul>
+            <li> <a href="/episodes/tt0112178/30">Star Trek: Voyager</a> </li>
+            <li> <a href="/episodes/tt0106145/20">Star Trek: Deep Space Nine</a> </li>
+            <li> <a href="/episodes/tt0407362/20">Battlestar Galactica</a> </li>
+            <li> <a href="/episodes/tt0118480/20">Stargate SG-1</a> </li>
+        </ul>
+        <p> Here's a list compiled by my sister </p>
+        <ul>
+            <li> <a href="/episodes/tt386676">The Office</a> </li>
+            <li> <a href="/episodes/tt1266020">Parks and Recreation</a> </li>
+            <li> <a href="/episodes/tt285403">Scrubs</a> </li>
+            <li> <a href="/episodes/tt460649">How I Met Your Mother</a> </li>
+            <li> <a href="/episodes/tt496424">30 Rock</a> </li>
+            <li> <a href="/episodes/tt108778">Friends</a> </li>
+            <li> <a href="/episodes/tt367279">Arrested Development</a> </li>
+            <li> <a href="/episodes/tt1439629">Community</a> </li>
+            <li> <a href="/episodes/tt1759761">Veep</a> </li>
+            <li> <a href="/episodes/tt2372162">Orange Is the New Black</a> </li>
+            <li> <a href="/episodes/tt472954">It's Always Sunny in Philadelphia</a> </li>
+            <li> <a href="/episodes/tt1586680">Shameless</a> </li>
+            <li> <a href="/episodes/tt106080">The Nanny</a> </li>
+            <li> <a href="/episodes/tt3526078">Schitt's Creek</a> </li>
+            <li> <a href="/episodes/tt4786824">The Crown</a> </li>
+            <li> <a href="/episodes/tt3339966">Unbreakable Kimmy Schmidt</a> </li>
+            <li> <a href="/episodes/tt115082">3rd Rock from the Sun</a> </li>
+            <li> <a href="/episodes/tt182576">Family Guy</a> </li>
+        </ul>
+
+        <p> Didn't see your favorite show in the lists above? Try using the search box at the top of the page. </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="modal fade" id="searchHelpModal" tabindex="-1" role="dialog" aria-labelledby="searchHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="searchHelpModalLabel">Show Name Search</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Filtered by your search words, sorted by popularity.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
