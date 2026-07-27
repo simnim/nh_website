@@ -24,12 +24,11 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen
-      # `not browser`: the selenium suite is the `browser` job below, kept apart
-      # so this one stays the fast signal. `not realdata`: ~/.nh-website-data
+      # `not realdata`: ~/.nh-website-data
       # does not exist on a runner, and never will. Everything else must pass.
       - env:
           NH_WEBSITE_REQUIRE_BROWSER: "1"
-        run: uv run pytest -m "browser and not realdata"
+        run: uv run pytest -m "not realdata"
 
   lint:
     runs-on: ubuntu-latest
