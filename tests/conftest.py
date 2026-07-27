@@ -134,8 +134,10 @@ def app_server(fixture_data_dir):
     # A file rather than a pipe: nothing drains it during the session, and a
     # full pipe buffer would wedge the server mid-suite.
     log = tempfile.TemporaryFile()
-    proc = sp.Popen(
-        ["uvicorn", "app.main:app", "--port", str(port)],
+    # S603/S607: the argv is a literal plus an int-derived port, there is no
+    # shell, and "uvicorn" is deliberately resolved from the active venv's PATH.
+    proc = sp.Popen(  # noqa: S603
+        ["uvicorn", "app.main:app", "--port", str(port)],  # noqa: S607
         stdout=log,
         stderr=sp.STDOUT,
         cwd=PROJECT_ROOT,

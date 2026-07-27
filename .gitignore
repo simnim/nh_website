@@ -169,3 +169,14 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# --- nh-website ---
+# The three databases live in ~/.nh-website-data, but a stray copy in the repo
+# would otherwise be tracked; only check-added-large-files stands in the way.
+*.db
+*.sqlite
+*.sqlite3
+.ruff_cache/
+# Machine-local claude settings: harmless today, but this is where a per-host
+# path or token would end up.
+.claude/settings.local.json

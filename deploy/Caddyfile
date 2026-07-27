@@ -1,0 +1,47 @@
+# Reference reverse-proxy config for topcat.app.
+#
+# Why this file exists: the site has been served by uvicorn bound straight to
+# the internet, over plain http. That means every search term and every show
+# anyone looks at is readable by any network operator in the path, and — worse
+# — an on-path attacker can rewrite the html. The Subresource Integrity hashes
+# in app/templates/base.html are excellent, and they buy nothing at all over
+# http, because a MITM simply deletes the integrity attributes before the
+# browser ever sees them. Encrypting the transport is what makes the rest of
+# the hardening real.
+#
+# Caddy is the recommendation because it gets and renews a Let's Encrypt
+# certificate on its own, with no cron and no certbot to babysit.
+#
+#   sudo apt install caddy
+#   sudo install -m 644 deploy/Caddyfile /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+#
+# Requires ports 80 and 443 forwarded to the Pi, and topcat.app resolving to
+# it. Caddy redirects http to https by itself; there is nothing to configure.
+#
+# If the Pi is behind CGNAT or a dynamic IP, use a Cloudflare Tunnel instead —
+# same outcome, and no inbound port forwarding.
+
+topcat.app {
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Two changes belong on the uvicorn side once this is in front of it:
+#
+#   1. Bind to loopback, not 0.0.0.0. With Caddy terminating tls there is no
+#      reason for uvicorn to accept a connection from anywhere else, and
+#      leaving it on 0.0.0.0 means the plain-http port stays reachable and
+#      quietly bypasses everything above.
+#
+#   2. Add --proxy-headers --forwarded-allow-ips=127.0.0.1 so the app logs the
+#      real client instead of the proxy. Both flags together, always:
+#      --proxy-headers on its own trusts X-Forwarded-For from anyone, which
+#      hands every client the ability to forge its own source address.
+#
+#      uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+#          --proxy-headers --forwarded-allow-ips=127.0.0.1
+#
+# And once https actually serves, set NH_WEBSITE_HSTS=1 in the service
+# environment to turn on Strict-Transport-Security (see SEND_HSTS in
+# app/main.py). Not before: HSTS is a year-long promise the browser caches, so
+# sending it from a host that cannot serve https locks users out of the site.

@@ -11,7 +11,6 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "python-multipart>=0.0.22",
     "jinja2>=3.1.6",
-    "requests>=2.33.1",
     "pandas>=3.0.5",
     "sqlalchemy>=2.0.51",
 ]
@@ -20,6 +19,9 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.2",
+    # Only tests/conftest.py polls the app_server with it; the site itself makes
+    # no outbound http calls, so it has no business in the runtime image.
+    "requests>=2.33.1",
     "pytest-asyncio>=0.24.0",
     "selenium>=4.41.0",
     "sqlfluff>=4.1.0",
@@ -37,11 +39,18 @@ line-length = 120
 line-length = 120
 
 [tool.ruff.lint]
-# E/W/F/C90 are the families flake8 ran; I is isort.
-select = ["E", "W", "F", "C90", "I"]
+# E/W/F/C90 are the families flake8 ran; I is isort. S is flake8-bandit — it is
+# the security lint (shell=True, hardcoded credentials, weak hashes,
+# verify=False), and it rides along in a tool the toolchain already has rather
+# than adding bandit as a second dependency.
+select = ["E", "W", "F", "C90", "I", "S"]
 # E203 conflicts with black's slice spacing; E266 because ### comments are wanted.
 # W503 had no ruff equivalent — the black conflict it worked around can't arise.
 ignore = ["E203", "E266"]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest is built on the assert statement, so S101 there is noise, not a finding.
+"tests/*" = ["S101"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

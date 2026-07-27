@@ -33,6 +33,12 @@ repos:
         # the run. pre-commit decides pass/fail from the unstaged diff, so a
         # hook that stages what it changed leaves that diff untouched.
         entry: bash -c 'black "$@" && git add -- "$@"' --
+-   repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+    # detect-private-key above only matches PEM blocks. This is the one that
+    # catches an api key, a token or a connection string.
+    -   id: gitleaks
 - repo: https://github.com/sqlfluff/sqlfluff
   rev: 4.2.2
   hooks:

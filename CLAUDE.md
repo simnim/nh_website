@@ -12,10 +12,35 @@ uv run pytest                         # whole suite
 uv run pytest -m "not browser"        # fast suite: everything but selenium, in seconds
 uv run pytest -m "not realdata"       # skip tests that need ~/.nh-website-data loaded
 uv run pytest tests/test_routes.py::test_name   # single test
-uv run pre-commit run --all-files     # ruff (lint + import sort), black, sqlfluff (sqlite dialect)
+uv run pre-commit run --all-files     # ruff (lint + import sort + S/bandit), black, gitleaks, sqlfluff
+uv export --frozen --all-groups --no-emit-project --no-hashes -o /tmp/req.txt && uvx pip-audit -r /tmp/req.txt
 ```
 
 `pyproject.toml` sets `asyncio_mode = "auto"`, so async test functions need no decorator.
+
+## Security QA
+
+Four layers, and they are meant to be kept in step:
+
+* **`tests/test_security.py`** — escaping, fts5/sql metacharacters, open redirects, path
+  traversal, the search cost caps, and the response headers. Everything it asserts is a
+  property the code already has by construction, so each test is really a tripwire on a
+  future one-line edit (a `|safe`, an f-string in a query, a `path:` converter). It uses the
+  synthetic databases, so it runs in the `-m "not browser"` suite.
+* **`.github/workflows/ci.yml`** — the enforcement point, since pre-commit is bypassable with
+  `--no-verify`. Runs the fast suite, `pre-commit run --all-files`, and `pip-audit` on every
+  push and PR plus weekly. Actions are pinned to commit shas; dependabot keeps the pins fresh.
+* **ruff `S`** (flake8-bandit) in `[tool.ruff.lint]` — the static security lint, riding along
+  in a tool the toolchain already had. `tests/*` ignores S101 because pytest is built on
+  `assert`; the two S603/S607 suppressions in `tests/conftest.py` are at the call site with
+  their reasoning.
+* **`pip-audit`** against the exported lockfile, not the `>=` floors in `pyproject.toml`, so
+  it reports what would actually be installed. Fix by `uv lock --upgrade`.
+
+Deliberately open: no CSP, because `episodes.html` has four inline `<script>` blocks that
+would need nonces threaded through the templates. `deploy/Caddyfile` covers TLS, which lives
+outside this repo; `NH_WEBSITE_HSTS=1` turns on HSTS and must stay off until https actually
+serves.
 
 ## Architecture
 

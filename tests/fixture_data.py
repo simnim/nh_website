@@ -27,7 +27,18 @@ SHOWS = [
     (1000001, "Nebula Patrol", 1995, 2001, 45, "Action,Adventure,Sci-Fi", 4, 25),
     (1000002, "Nebula Patrol: Redux", 2015, None, 42, "Sci-Fi", 2, 6),
     (2000003, "Quiet Bakery", 2019, 2019, 30, "Comedy", 1, 4),
+    # Titles come out of the imdb dump, which nobody here controls, and they
+    # land in half a dozen template slots. This one carries every character
+    # that would break out of one, so tests/test_security.py can prove they
+    # arrive escaped. Keep it last: episode tconsts are handed out in this
+    # order, and inserting above would renumber the shows the other tests pin.
+    (3000004, 'Zorbtown <script>alert("xss")</script> & Sons', 2020, 2021, 30, "Comedy", 1, 2),
 ]
+
+# The show above, by the names the security tests need to refer to it.
+XSS_SHOW_TCONST = "tt3000004"
+XSS_SHOW_TITLE = SHOWS[-1][1]
+XSS_PAYLOAD = '<script>alert("xss")</script>'
 
 # The show every episode-page test drives: 100 episodes is enough rows to
 # scroll a frozen header out of a viewport and to leave plenty below a cutoff.

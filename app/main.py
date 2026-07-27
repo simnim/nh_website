@@ -10,7 +10,7 @@ from pathlib import Path
 # https://nackjicholson.github.io/aiosql/pydoc/aiosql.html
 import aiosql
 import aiosqlite
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -35,6 +35,22 @@ DB_PATHS = {
 # keep pointing at the old (unlinked) inode for the life of the process.
 DB_RELOAD_POLL_SECONDS = 60
 DB_CLOSE_GRACE_SECONDS = 30
+
+# Sent on every response. No Content-Security-Policy yet: episodes.html carries
+# four inline <script> blocks, so a useful policy needs nonces threaded through
+# the templates rather than a blanket 'unsafe-inline' that would buy nothing.
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Frame-Options": "DENY",
+    "Cross-Origin-Opener-Policy": "same-origin",
+}
+
+# Opt-in, because HSTS is a promise the browser remembers: sending it from a
+# deployment that cannot actually serve https locks users out for a year.
+# Set NH_WEBSITE_HSTS=1 only once tls terminates in front of this app.
+HSTS_HEADER = "max-age=31536000; includeSubDomains"
+SEND_HSTS = os.environ.get("NH_WEBSITE_HSTS", "") == "1"
 
 db = {}
 db_mtimes = {}
@@ -97,7 +113,9 @@ async def lifespan(app: FastAPI):
         await conn.close()
 
 
-app = FastAPI(lifespan=lifespan)
+# Nothing here consumes the generated schema, so /docs, /redoc and
+# /openapi.json are attack surface with no user.
+app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=THIS_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=THIS_DIR / "templates")
 
@@ -109,7 +127,18 @@ class MobileMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        for header, value in SECURITY_HEADERS.items():
+            response.headers.setdefault(header, value)
+        if SEND_HSTS:
+            response.headers.setdefault("Strict-Transport-Security", HSTS_HEADER)
+        return response
+
+
 app.add_middleware(MobileMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.get("/favicon.ico")
@@ -149,6 +178,14 @@ def clean_txt(txt):
     return re.sub(r"\s+", " ", no_specials).strip()
 
 
+# Every term costs another fts5 prefix scan in the AND chain below, so an
+# unbounded query string is a free way to make a raspberry pi do arithmetic.
+# No real show title needs more than this to be found.
+MAX_SEARCH_TERMS = 8
+MAX_SEARCH_TERM_LEN = 40
+MAX_SEARCH_STR_LEN = 200
+
+
 async def get_search_results_given_search_str(search_str, return_just_id=False):
     # Remove special characters and allow for prefix searches with *
     # Example 'ABC %# ^def & lol'  ->  'abc* AND def* AND lol*'
@@ -158,6 +195,7 @@ async def get_search_results_given_search_str(search_str, return_just_id=False):
         # empties the box, and a bare "*" is an fts5 syntax error rather than a
         # match-everything.
         return []
+    terms = [term[:MAX_SEARCH_TERM_LEN] for term in terms[:MAX_SEARCH_TERMS]]
     query_str = "* AND ".join(terms) + "*"
     return [
         r["value"] if return_just_id else r["label"]
@@ -167,7 +205,9 @@ async def get_search_results_given_search_str(search_str, return_just_id=False):
 
 # Called by the jqueryui autocomplete widget for top-episodes
 @app.get("/search")
-async def search(term: str = ""):
+async def search(term: str = Query("", max_length=MAX_SEARCH_STR_LEN)):
+    # Longer than MAX_SEARCH_STR_LEN is a 422 from Query before any fts5 work
+    # happens; no show title is anywhere near that, so nothing real is refused.
     return await get_search_results_given_search_str(search_str=clean_txt(term))
 
 
@@ -238,7 +278,7 @@ async def post_top_episodes_for_show(
     request: Request,
     imdb_show_id: str = None,
     max_rank_pct: int = 20,
-    imdb_show_id_form: str = Form("", alias="imdb_show_id"),
+    imdb_show_id_form: str = Form("", alias="imdb_show_id", max_length=MAX_SEARCH_STR_LEN),
     max_rank_pct_form: int = Form(20, alias="max_rank_pct"),
 ):
     clean_imdb_id_input = clean_txt(imdb_show_id_form)
